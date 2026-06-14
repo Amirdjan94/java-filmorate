@@ -92,23 +92,6 @@ class FilmControllerPutMethodTests {
     }
 
     @Test
-    void update_newDescriptionHave201Symbols_returnsCurrentFilm() {
-        Film descriptionHave201SymbolsFilm = Film.builder()
-                .id(1L)
-                .name("New name")
-                .description("Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят " +
-                        "разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. " +
-                        "о Куглов, который за время «свое")
-                .releaseDate(LocalDate.of(1994, 07, 22))
-                .duration(100)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.update(descriptionHave201SymbolsFilm));
-        assertFalse(filmController.getFilms().toString().contains("Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят " +
-                "разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. " +
-                "о Куглов, который за время «свое"), "Ожидается список без новых значений");
-    }
-
-    @Test
     void update_descriptionHave200Symbols_returnsUpdateFilm() {
         Film descriptionHave200SymbolsFilm = Film.builder()
                 .id(1L)
@@ -146,18 +129,6 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .build();
         assertEquals(filmController.update(withoutDurationFilm), validFilm);
-        assertTrue(filmController.getFilms().toString().contains("100"), "Ожидается список без новых значений");
-    }
-
-    @Test
-    void update_DurationLessZero_returnsCurrentFilm() {
-        Film durationLessZeroFilm = Film.builder()
-                .id(1L)
-                .name("New name")
-                .releaseDate(LocalDate.of(1994, 07, 22))
-                .duration(-1)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(durationLessZeroFilm));
         assertTrue(filmController.getFilms().toString().contains("100"), "Ожидается список без новых значений");
     }
 

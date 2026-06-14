@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.services.userServices.*;
 
 import java.util.*;
 
@@ -15,8 +14,6 @@ import java.util.*;
 @Slf4j
 public class UserController {
     public Map<Long, User> users = new HashMap<>();
-    private List<UserValidateProcessor> userValidateProcessor = List.of(new LoginValidate(),
-            new NewUserEmailValidate(), new BirthdayValidator());
 
     @GetMapping
     public Collection<User> getUsers() {
@@ -51,19 +48,16 @@ public class UserController {
         normalizeFields(user);
         User currentUser = users.get(user.getId());
         if (user.getEmail() != null) {
-            new CurrentUserEmailValidate().doValidate(user);
             checkEmailCurrentUser(user);
             currentUser.setEmail(user.getEmail());
         }
         if (user.getLogin() != null) {
-            new LoginValidate().doValidate(user);
             currentUser.setLogin(user.getLogin());
         }
         if (user.getBirthday() != null) {
-            new BirthdayValidator().doValidate(user);
             currentUser.setBirthday(user.getBirthday());
         }
-        if (user.getName() != null || !user.getName().isBlank()) { //Тут проверяем что новое имя не пустое
+        if (user.getName() != null || !user.getName().isBlank()) {
             currentUser.setName(user.getName());
         }
         log.info("Информация о пользователе успешно обновлена");
@@ -80,16 +74,10 @@ public class UserController {
     }
 
     private void validateAndNormalizeFields(User user) {
-        new NullebleFildeValidator().doValidate(user);
-        if (user.getEmail() != null) {
-            checkEmailNewUser(user);
-        }
-        for (UserValidateProcessor processorName : userValidateProcessor) {
-            processorName.doValidate(user);
-        }
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
+        checkEmailNewUser(user);
         normalizeFields(user);
     }
 
