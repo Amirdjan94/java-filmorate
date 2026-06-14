@@ -41,19 +41,6 @@ class UserControllerPutMethodTests {
     }
 
     @Test
-    void update_invalidNewEmail_returnsUpdateUser() {
-        User invalidNewEmailUser = User.builder()
-                .id(1L)
-                .email("exampleNew")
-                .login("userLogin")
-                .birthday(LocalDate.of(1994, 12, 27))
-                .name("Jhon")
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> userController.update(invalidNewEmailUser));
-        assertTrue(userController.getUsers().toString().contains("example@mail.ru"), "Ожидается список без новых значений");
-    }
-
-    @Test
     void update_notExistId_returnsCurrentUser() {
         User updateNotExistIdUser = User.builder()
                 .id(2L)

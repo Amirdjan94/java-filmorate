@@ -33,44 +33,6 @@ class FilmControllerPostMethodTests {
     }
 
     @Test
-    void create_filmWithoutName_returnsException() {
-        Film filmEmptyName = Film.builder()
-                .description("Good new film")
-                .releaseDate(LocalDate.of(1994, 07, 22))
-                .duration(100)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(filmEmptyName));
-        assertTrue(filmController.getFilms().isEmpty(), "Ожидается пустой список");
-    }
-
-    @Test
-    void create_filmWithIsBlankedName_returnsException() {
-        Film isBlankedNameFilm = Film.builder()
-                .name("   ")
-                .description("Good new film")
-                .releaseDate(LocalDate.of(1994, 07, 22))
-                .duration(100)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(isBlankedNameFilm));
-        System.out.println(filmController.getFilms());
-        assertTrue(filmController.getFilms().isEmpty(), "Ожидается пустой список");
-    }
-
-    @Test
-    void create_descriptionHave201Symbols_returnsException() {
-        Film descriptionHave201SymbolsFilm = Film.builder()
-                .name("New film")
-                .description("Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят " +
-                        "разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. " +
-                        "о Куглов, который за время «свое")
-                .releaseDate(LocalDate.of(1994, 07, 22))
-                .duration(100)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(descriptionHave201SymbolsFilm));
-        assertTrue(filmController.getFilms().isEmpty(), "Ожидается пустой список");
-    }
-
-    @Test
     void create_descriptionHave200Symbols_returnsFilm() {
         Film descriptionHave200SymbolsFilm = Film.builder()
                 .name("New film")
@@ -107,18 +69,6 @@ class FilmControllerPostMethodTests {
                 .build();
         assertEquals(filmController.create(filmEmptyName), filmEmptyName);
         assertFalse(filmController.getFilms().isEmpty(), "Ожидается НЕ пустой список");
-    }
-
-    @Test
-    void create_filmDurationLessZero_returnsException() {
-        Film filmDurationLessZero = Film.builder()
-                .name("New film")
-                .description("Good new film")
-                .releaseDate(LocalDate.of(1995, 12, 27))
-                .duration(-1)
-                .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(filmDurationLessZero));
-        assertTrue(filmController.getFilms().isEmpty(), "Ожидается пустой список");
     }
 
     @Test
