@@ -1,6 +1,9 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -8,24 +11,21 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
-/**
- * Film..
- */
 @Data
 @Builder
-public class Film {
+public class User {
     @EqualsAndHashCode.Exclude
     private Long id;
+    @Email
     @NotBlank
-    @Size(max = 200)
+    @NotNull
+    private String email;
+    @NotBlank
+    @NotNull
+    private String login;
     private String name;
-    @Size(max = 200)
-    private String description;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Past
     @NotNull
-    private LocalDate releaseDate;
-    @NotNull
-    @Min(1)
-    private Integer duration;
+    private LocalDate birthday;
 }
