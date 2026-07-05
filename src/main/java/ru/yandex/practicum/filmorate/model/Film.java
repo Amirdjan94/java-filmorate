@@ -7,6 +7,8 @@ import lombok.EqualsAndHashCode;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Film..
@@ -28,4 +30,17 @@ public class Film {
     @NotNull
     @Min(1)
     private Integer duration;
+    @EqualsAndHashCode.Exclude
+    private Set<Long> likes;
+
+    @Builder
+    public Film(Long id, String name, String description, LocalDate releaseDate, Integer duration,
+                Set<Long> likes) {
+        this.description = description;
+        this.duration = duration;
+        this.id = id;
+        this.likes = likes != null ? likes : new HashSet<>();
+        this.name = name;
+        this.releaseDate = releaseDate;
+    }
 }

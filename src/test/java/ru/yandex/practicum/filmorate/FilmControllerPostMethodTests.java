@@ -3,9 +3,9 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.FilmController;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 
@@ -13,11 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class FilmControllerPostMethodTests {
-    FilmController filmController;
+    InMemoryFilmStorage inMemoryFilmStorage;
 
     @BeforeEach
     void beforeEach() {
-        filmController = new FilmController();
+        inMemoryFilmStorage = new InMemoryFilmStorage();
     }
 
     @Test
@@ -28,8 +28,8 @@ class FilmControllerPostMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(filmController.create(validFilm), validFilm);
-        assertFalse(filmController.getFilms().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(inMemoryFilmStorage.create(validFilm), validFilm);
+        assertFalse(inMemoryFilmStorage.getFilms().isEmpty(), "Ожидается НЕ пустой список");
     }
 
     @Test
@@ -42,8 +42,8 @@ class FilmControllerPostMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(filmController.create(descriptionHave200SymbolsFilm), descriptionHave200SymbolsFilm);
-        assertFalse(filmController.getFilms().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(inMemoryFilmStorage.create(descriptionHave200SymbolsFilm), descriptionHave200SymbolsFilm);
+        assertFalse(inMemoryFilmStorage.getFilms().isEmpty(), "Ожидается НЕ пустой список");
         ;
     }
 
@@ -55,8 +55,8 @@ class FilmControllerPostMethodTests {
                 .releaseDate(LocalDate.of(1895, 12, 27))
                 .duration(100)
                 .build();
-        assertThrows(ConditionsNotMetException.class, () -> filmController.create(filmEmptyName));
-        assertTrue(filmController.getFilms().isEmpty(), "Ожидается пустой список");
+        assertThrows(ConditionsNotMetException.class, () -> inMemoryFilmStorage.create(filmEmptyName));
+        assertTrue(inMemoryFilmStorage.getFilms().isEmpty(), "Ожидается пустой список");
     }
 
     @Test
@@ -67,8 +67,8 @@ class FilmControllerPostMethodTests {
                 .releaseDate(LocalDate.of(1895, 12, 28))
                 .duration(100)
                 .build();
-        assertEquals(filmController.create(filmEmptyName), filmEmptyName);
-        assertFalse(filmController.getFilms().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(inMemoryFilmStorage.create(filmEmptyName), filmEmptyName);
+        assertFalse(inMemoryFilmStorage.getFilms().isEmpty(), "Ожидается НЕ пустой список");
     }
 
     @Test
@@ -79,7 +79,7 @@ class FilmControllerPostMethodTests {
                 .releaseDate(LocalDate.of(1995, 12, 27))
                 .duration(1)
                 .build();
-        assertEquals(filmController.create(filmDurationGreaterZero), filmDurationGreaterZero);
-        assertFalse(filmController.getFilms().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(inMemoryFilmStorage.create(filmDurationGreaterZero), filmDurationGreaterZero);
+        assertFalse(inMemoryFilmStorage.getFilms().isEmpty(), "Ожидается НЕ пустой список");
     }
 }
