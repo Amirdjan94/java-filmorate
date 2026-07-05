@@ -3,8 +3,8 @@ package ru.yandex.practicum.filmorate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class UserControllerGetMethodTests {
-    UserController userController;
+    InMemoryUserStorage inMemoryUserStorage;
     User user = User.builder()
             .email("example@mail.ru")
             .login("userLogin")
@@ -24,19 +24,19 @@ class UserControllerGetMethodTests {
 
     @BeforeEach
     void beforeEach() {
-        userController = new UserController();
+        inMemoryUserStorage = new InMemoryUserStorage();
     }
 
     @Test
     void getFilms_emptyFilmsHashMap_returnsEmpyList() {
-        Collection<User> users = userController.getUsers();
+        Collection<User> users = inMemoryUserStorage.getUsers();
         assertTrue(users.isEmpty(), "Ожидается пустой список");
     }
 
     @Test
     void getFilms_oneFilmOnHashMap_returnsFilmList() {
-        userController.create(user);
-        Collection<User> users = userController.getUsers();
+        inMemoryUserStorage.create(user);
+        Collection<User> users = inMemoryUserStorage.getUsers();
         assertFalse(users.isEmpty(), "Ожидается список с пользователями");
     }
 
