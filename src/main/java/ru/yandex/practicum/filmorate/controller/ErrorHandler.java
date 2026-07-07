@@ -37,4 +37,10 @@ public class ErrorHandler {
         return new ErrorResponse("Ошибка с входным параметром.", e.getMessage());
     }
 
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleRuntimeException(final RuntimeException e) {
+        return new ErrorResponse("Что-то пошло не так. Обратитесь к системному администратору", e.getMessage());
+    }
+
 }

@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 
 import java.time.LocalDate;
@@ -14,12 +16,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class FilmControllerPutMethodTests {
+    @Autowired
     InMemoryFilmStorage inMemoryFilmStorage;
+    @Autowired
+    FilmService filmService;
     Film validFilm;
 
     @BeforeEach
     void beforeEach() {
-        inMemoryFilmStorage = new InMemoryFilmStorage();
+        inMemoryFilmStorage.clearStorage();
         validFilm = Film.builder()
                 .name("New film")
                 .description("Good new film")
@@ -38,8 +43,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(updateValidFilm), updateValidFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("New name"), "Ожидается список с новыми значениями");
+        assertEquals(filmService.update(updateValidFilm), updateValidFilm);
+        assertTrue(filmService.getFilms().toString().contains("New name"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -51,7 +56,7 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertThrows(ObjectNotFoundException.class, () -> inMemoryFilmStorage.update(updatenotExistIdFilm));
+        assertThrows(ObjectNotFoundException.class, () -> filmService.update(updatenotExistIdFilm));
         assertFalse(inMemoryFilmStorage.getFilms().toString().contains("New name"), "Ожидается список без новых значений");
     }
 
@@ -63,8 +68,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(updatenotExistIdFilm), validFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("New film"), "Ожидается список без новых значений");
+        assertEquals(filmService.update(updatenotExistIdFilm), validFilm);
+        assertTrue(filmService.getFilms().toString().contains("New film"), "Ожидается список без новых значений");
     }
 
     @Test
@@ -76,8 +81,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(validNewDescriptionFilm), validNewDescriptionFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("New description"), "Ожидается список с новыми значениями");
+        assertEquals(filmService.update(validNewDescriptionFilm), validNewDescriptionFilm);
+        assertTrue(filmService.getFilms().toString().contains("New description"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -88,8 +93,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(withoutDescriptionFilm), validFilm);
-        assertFalse(inMemoryFilmStorage.getFilms().toString().contains("New description"), "Ожидается список без новых значений");
+        assertEquals(filmService.update(withoutDescriptionFilm), validFilm);
+        assertFalse(filmService.getFilms().toString().contains("New description"), "Ожидается список без новых значений");
     }
 
     @Test
@@ -103,8 +108,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(descriptionHave200SymbolsFilm), descriptionHave200SymbolsFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят " +
+        assertEquals(filmService.update(descriptionHave200SymbolsFilm), descriptionHave200SymbolsFilm);
+        assertTrue(filmService.getFilms().toString().contains("Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят " +
                 "разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. " +
                 "о Куглов, который за время «сво"), "Ожидается список с новыми значениями");
     }
@@ -118,8 +123,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(101)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(validNewDurationFilm), validNewDurationFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("101"), "Ожидается список с новыми значениями");
+        assertEquals(filmService.update(validNewDurationFilm), validNewDurationFilm);
+        assertTrue(filmService.getFilms().toString().contains("101"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -129,8 +134,8 @@ class FilmControllerPutMethodTests {
                 .name("New name")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .build();
-        assertEquals(inMemoryFilmStorage.update(withoutDurationFilm), validFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("100"), "Ожидается список без новых значений");
+        assertEquals(filmService.update(withoutDurationFilm), validFilm);
+        assertTrue(filmService.getFilms().toString().contains("100"), "Ожидается список без новых значений");
     }
 
     @Test
@@ -142,8 +147,8 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1994, 07, 23))
                 .duration(101)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(validNewReleaseDateFilm), validNewReleaseDateFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("1994-07-23"), "Ожидается список с новыми значениями");
+        assertEquals(filmService.update(validNewReleaseDateFilm), validNewReleaseDateFilm);
+        assertTrue(filmService.getFilms().toString().contains("1994-07-23"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -154,8 +159,8 @@ class FilmControllerPutMethodTests {
                 .description("New description")
                 .duration(101)
                 .build();
-        assertEquals(inMemoryFilmStorage.update(withoutReleaseDateFilm), validFilm);
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("1994-07-22"), "Ожидается список без новых значений");
+        assertEquals(filmService.update(withoutReleaseDateFilm), validFilm);
+        assertTrue(filmService.getFilms().toString().contains("1994-07-22"), "Ожидается список без новых значений");
     }
 
     @Test
@@ -167,7 +172,7 @@ class FilmControllerPutMethodTests {
                 .releaseDate(LocalDate.of(1895, 12, 27))
                 .duration(100)
                 .build();
-        assertThrows(ConditionsNotMetException.class, () -> inMemoryFilmStorage.create(releaseDateBefore1895Film));
-        assertTrue(inMemoryFilmStorage.getFilms().toString().contains("1994-07-22"), "Ожидается список без новых значений");
+        assertThrows(ConditionsNotMetException.class, () -> filmService.create(releaseDateBefore1895Film));
+        assertTrue(filmService.getFilms().toString().contains("1994-07-22"), "Ожидается список без новых значений");
     }
 }

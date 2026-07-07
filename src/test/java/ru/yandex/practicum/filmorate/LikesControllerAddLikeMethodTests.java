@@ -51,9 +51,9 @@ public class LikesControllerAddLikeMethodTests {
 
     @Test
     void addLike_existUsersAndFilm_returnsSuccessStatus() {
-        assertTrue(filmService.addLike(1L, 1L).containsValue("success"),
+        assertTrue(filmService.addLike(1L, 1L).containsValue("Add new like"),
                 "Ожидается сообщение об успешном обработке запроса");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().contains(1L),
+        assertTrue(filmService.getFilmById(1L).getLikes().contains(1L),
                 "В списке лайков ожидается ID-1");
     }
 
@@ -61,7 +61,7 @@ public class LikesControllerAddLikeMethodTests {
     void addLike_notExistUsersId_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> filmService.addLike(1L, 2L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().isEmpty(),
+        assertTrue(filmService.getFilmById(1L).getLikes().isEmpty(),
                 "Ожидается пустой список лайков");
     }
 
@@ -69,7 +69,7 @@ public class LikesControllerAddLikeMethodTests {
     void addLike_notExistFilmId_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> filmService.addLike(2L, 1L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().isEmpty(),
+        assertTrue(filmService.getFilmById(1L).getLikes().isEmpty(),
                 "Ожидается пустой список лайков");
     }
 
@@ -77,7 +77,7 @@ public class LikesControllerAddLikeMethodTests {
     void addLike_incorrectFilmId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> filmService.addLike(-1L, 1L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().isEmpty(),
+        assertTrue(filmService.getFilmById(1L).getLikes().isEmpty(),
                 "Ожидается пустой список лайков");
     }
 
@@ -85,7 +85,7 @@ public class LikesControllerAddLikeMethodTests {
     void addLike_incorrectUserId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> filmService.addLike(1L, -1L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().isEmpty(),
+        assertTrue(filmService.getFilmById(1L).getLikes().isEmpty(),
                 "Ожидается пустой список лайков");
     }
 }

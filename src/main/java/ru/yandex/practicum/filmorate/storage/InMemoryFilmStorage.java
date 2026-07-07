@@ -3,15 +3,10 @@ package ru.yandex.practicum.filmorate.storage;
 import com.sun.jdi.request.DuplicateRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
-import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -29,7 +24,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     public Film create(Film film) {
         log.info("Получили запрос на добавление фильма");
         log.debug("Входящий запрос - " + film.toString());
-        validateAndNormalizeFields(film);
+        checkDuplicateFilms(film);
         film.setId(getNextId());
         films.put(film.getId(), film);
         log.info("В список добавили фильм - " + film.toString());
@@ -37,72 +32,42 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film update(Film film) {
+    public Film update(Film newFilm, Film currentFilm) {
         log.info("Получили запрос на обновление информации фильме");
-        log.debug("Входящий запрос - " + film.toString());
-        if (film.getId() == null) {
-            log.warn("Передан пустой Id");
-            throw new ConditionsNotMetException("Id не должен быть пустым");
+        log.debug("Входящий запрос - " + newFilm.toString());
+        if (newFilm.getName() != null) {
+            currentFilm.setName(newFilm.getName());
         }
-        if (!films.containsKey(film.getId())) {
-            log.warn("Отсутсвует фильм с указанным Id");
-            throw new ObjectNotFoundException("Отсутсвует фильм с указанным Id");
+        if (newFilm.getReleaseDate() != null) {
+            currentFilm.setReleaseDate(newFilm.getReleaseDate());
         }
-        normalizeFields(film);
-        Film currentFilm = films.get(film.getId());
-        if (film.getName() != null) {
-            currentFilm.setName(film.getName());
+        if (newFilm.getDescription() != null) {
+            currentFilm.setDescription(newFilm.getDescription());
         }
-        if (film.getReleaseDate() != null) {
-            currentFilm.setReleaseDate(film.getReleaseDate());
-        }
-        if (film.getDescription() != null) {
-            releaseDateValidator(film);
-            currentFilm.setDescription(film.getDescription());
-        }
-        if (film.getDuration() != null) {
-            currentFilm.setDuration(film.getDuration());
+        if (newFilm.getDuration() != null) {
+            currentFilm.setDuration(newFilm.getDuration());
         }
         log.info("Информация о фильме успешно обновлено");
         return currentFilm;
     }
 
     @Override
-    public Film getFilmById(Long id) {
+    public Optional<Film> getFilmById(Long id) {
         log.info("Получили запрос на передачу фильма с ID-" + id);
-        log.debug("Запуск валидации входных данных");
-        checkFilmsId(id);
-        log.debug("Корректные входные данные");
-        log.info("Передали фильм по ID-" + id);
-        return films.get(id);
+        return Optional.ofNullable(films.get(id));
+    }
+
+    @Override
+    public Collection<Film> getMostPopularFilms(int count) {
+        Comparator<Film> comparator = Comparator.comparing(film -> film.getLikes().size());
+        return getFilms().stream()
+                .sorted(comparator.reversed())
+                .limit(count)
+                .collect(Collectors.toList());
     }
 
     public void clearStorage() {
         films.clear();
-    }
-
-    private long getNextId() {
-        long currentMaxId = films.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
-    }
-
-    private void validateAndNormalizeFields(Film film) {
-        checkDuplicateFilms(film);
-        releaseDateValidator(film);
-        normalizeFields(film);
-    }
-
-    private void normalizeFields(Film film) {
-        if (film.getName() != null) {
-            film.setName(film.getName().trim());
-        }
-        if (film.getDescription() != null) {
-            film.setDescription(film.getDescription().trim());
-        }
     }
 
     private void checkDuplicateFilms(Film film) {
@@ -112,22 +77,12 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
     }
 
-    private void releaseDateValidator(Film film) {
-        log.debug("Ввалидация поля releaseDate");
-        if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(FIRST_FILM_RELEASE_DATE)) {
-            log.warn("Дата релиза " + film.getReleaseDate());
-            throw new ConditionsNotMetException("Дата релиза — не раньше "
-                    + FIRST_FILM_RELEASE_DATE);
-        }
-        log.debug("Поле releaseDate валиден");
-    }
-
-    private void checkFilmsId(Long filmId) {
-        if (filmId <= 0L) {
-            throw new ConditionsNotMetException("Не корректный ID - " + filmId);
-        }
-        if (!films.containsKey(filmId)) {
-            throw new ObjectNotFoundException("Пользователь с id=" + filmId + " не найден");
-        }
+    private long getNextId() {
+        long currentMaxId = films.keySet()
+                .stream()
+                .mapToLong(id -> id)
+                .max()
+                .orElse(0);
+        return ++currentMaxId;
     }
 }

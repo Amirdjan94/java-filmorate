@@ -44,7 +44,7 @@ public class FriendsControllerAddFriendMethodTests {
     void addFriends_existUsers_returnsSuccessStatus() {
         assertTrue(userService.addFriend(1L, 2L).containsValue("success"),
                 "Ожидается сообщение об успешном обработке запроса");
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().contains(2L),
+        assertTrue(userService.getUserById(1L).getFriends().contains(2L),
                 "В списке друзей ожидается ID-2");
     }
 
@@ -52,7 +52,7 @@ public class FriendsControllerAddFriendMethodTests {
     void addFriends_notExistUsersId_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> userService.addFriend(3L, 2L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
 
@@ -60,7 +60,7 @@ public class FriendsControllerAddFriendMethodTests {
     void addFriends_incorrectUsersId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(-3L, 2L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
 
@@ -68,7 +68,7 @@ public class FriendsControllerAddFriendMethodTests {
     void addFriends_sameUsersId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(2L, 2L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
 }

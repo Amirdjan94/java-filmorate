@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,8 +26,8 @@ public class UserService {
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        inMemoryUserStorage.getUserById(userId).getFriends().add(friendId);
-        inMemoryUserStorage.getUserById(friendId).getFriends().add(userId);
+        this.getUserById(userId).getFriends().add(friendId);
+        this.getUserById(friendId).getFriends().add(userId);
         log.info("Добавление в список друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -38,8 +40,8 @@ public class UserService {
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        inMemoryUserStorage.getUserById(userId).getFriends().remove(friendId);
-        inMemoryUserStorage.getUserById(friendId).getFriends().remove(userId);
+        this.getUserById(userId).getFriends().remove(friendId);
+        this.getUserById(friendId).getFriends().remove(userId);
         log.info("Удаление из списка друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -49,8 +51,8 @@ public class UserService {
 
     public Collection<User> getListOfFriends(Long userId) { // список пользователей, являющихся его друзьями
         log.info("Получили запрос на список друзей для пользователя с ID-" + userId);
-        return inMemoryUserStorage.getUserById(userId).getFriends().stream()
-                .map(inMemoryUserStorage::getUserById)
+        return this.getUserById(userId).getFriends().stream()
+                .map(this::getUserById)
                 .collect(Collectors.toList());
     }
 
@@ -60,16 +62,65 @@ public class UserService {
         checkDuplicateId(firstUserId, secondUserId);
         log.debug("Корректные входные данные");
         log.info("Передали список общих друзей");
-        Set<Long> firstUserFriendsIDs = inMemoryUserStorage.getUserById(firstUserId).getFriends();
-        return inMemoryUserStorage.getUserById(secondUserId).getFriends().stream()
+        Set<Long> firstUserFriendsIDs = this.getUserById(firstUserId).getFriends();
+        return this.getUserById(secondUserId).getFriends().stream()
                 .filter(firstUserFriendsIDs::contains)
-                .map(inMemoryUserStorage::getUserById)
+                .map(this::getUserById)
                 .collect(Collectors.toList());
+    }
+
+    public Collection<User> getUsers() {
+        return inMemoryUserStorage.getUsers();
+    }
+
+    public User create(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+        normalizeFields(user);
+        return inMemoryUserStorage.create(user);
+    }
+
+    public User update(User user) {
+        if (user.getId() == null) {
+            log.warn("Передан пустой Id");
+            throw new ConditionsNotMetException("Id не должен быть пустым");
+        }
+        normalizeFields(user);
+        User currentUser = getUserById(user.getId());
+        return inMemoryUserStorage.update(user, currentUser);
+    }
+
+    public User getUserById(Long id) {
+        checkUsersId(id);
+        Optional<User> user = inMemoryUserStorage.getUserById(id);
+        if (user.isEmpty()) {
+            throw new ObjectNotFoundException("Пользователь с id=" + id + " не найден");
+        }
+        return user.get();
     }
 
     private void checkDuplicateId(Long firstId, Long secondId) {
         if (firstId == secondId) {
             throw new ConditionsNotMetException("Указан один и тот же пользователь");
+        }
+    }
+
+    private void normalizeFields(User user) {
+        if (user.getLogin() != null) {
+            user.setLogin(user.getLogin().trim());
+        }
+        if (user.getName() != null) {
+            user.setName(user.getName().trim());
+        }
+        if (user.getEmail() != null) {
+            user.setEmail(user.getEmail().trim());
+        }
+    }
+
+    private void checkUsersId(Long userId) {
+        if (userId <= 0L) {
+            throw new ConditionsNotMetException("Не корректный ID - " + userId);
         }
     }
 }
