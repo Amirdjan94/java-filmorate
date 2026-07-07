@@ -2,14 +2,13 @@ package ru.yandex.practicum.filmorate.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.DuplicatedDataException;
-import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -26,7 +25,7 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User create(User user) {
         log.info("Получили запрос на добавление пользователя");
-        validateAndNormalizeFields(user);
+        checkEmailNewUser(user);
         user.setId(getNextId());
         users.put(user.getId(), user);
         log.info("В список добавили пользователя - " + user.toString());
@@ -34,18 +33,8 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User update(User user) {
+    public User update(User user, User currentUser) {
         log.info("Получили запрос на обновление информации пользователе");
-        if (user.getId() == null) {
-            log.warn("Передан пустой Id");
-            throw new ConditionsNotMetException("Id не должен быть пустым");
-        }
-        if (!users.containsKey(user.getId())) {
-            log.warn("Отсутсвует фильм с указанным Id");
-            throw new ObjectNotFoundException("Отсутсвует пользователь с указанным Id");
-        }
-        normalizeFields(user);
-        User currentUser = users.get(user.getId());
         if (user.getEmail() != null) {
             checkEmailCurrentUser(user);
             currentUser.setEmail(user.getEmail());
@@ -64,13 +53,10 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(Long id) {
+    public Optional<User> getUserById(Long id) {
         log.info("Получили запрос на передачу пользоватля с ID-" + id);
-        log.debug("Запуск валидации входных данных");
-        checkUsersId(id);
-        log.debug("Корректные входные данные");
         log.info("Передали пользователя по ID-" + id);
-        return users.get(id);
+        return Optional.ofNullable(users.get(id));
     }
 
     public void clearStorage() {
@@ -84,26 +70,6 @@ public class InMemoryUserStorage implements UserStorage {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
-    }
-
-    private void validateAndNormalizeFields(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-        checkEmailNewUser(user);
-        normalizeFields(user);
-    }
-
-    private void normalizeFields(User user) {
-        if (user.getLogin() != null) {
-            user.setLogin(user.getLogin().trim());
-        }
-        if (user.getName() != null) {
-            user.setName(user.getName().trim());
-        }
-        if (user.getEmail() != null) {
-            user.setEmail(user.getEmail().trim());
-        }
     }
 
     private void checkEmailCurrentUser(User user) {
@@ -122,14 +88,5 @@ public class InMemoryUserStorage implements UserStorage {
                 throw new DuplicatedDataException("Этот имейл уже используется");
             }
         }
-    }
-
-    private void checkUsersId(Long userId) {
-            if (userId <= 0L) {
-                throw new ConditionsNotMetException("Не корректный ID - " + userId);
-            }
-            if (!users.containsKey(userId)) {
-                throw new ObjectNotFoundException("Пользователь с id=" + userId + " не найден");
-            }
     }
 }

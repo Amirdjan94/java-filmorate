@@ -44,7 +44,7 @@ public class FriendsControllerDeleteFriendMethodTests {
     @Test
     void deleteFriend_existUsers_returnsSuccessStatus() {
         assertTrue(userService.deleteFriend(1L, 2L).containsValue("success"));
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
 
@@ -52,7 +52,7 @@ public class FriendsControllerDeleteFriendMethodTests {
     void deleteFriend_notExistUsersId_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> userService.deleteFriend(3L, 2L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertFalse(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается НЕ пустой список друзей");
     }
 
@@ -60,7 +60,7 @@ public class FriendsControllerDeleteFriendMethodTests {
     void deleteFriend_incorrectUsersId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> userService.deleteFriend(-3L, 2L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertFalse(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается Не пустой список друзей");
     }
 
@@ -68,7 +68,7 @@ public class FriendsControllerDeleteFriendMethodTests {
     void deleteFriend_sameUsersId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> userService.deleteFriend(2L, 2L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertFalse(inMemoryUserStorage.getUserById(1L).getFriends().isEmpty(),
+        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается Не пустой список друзей");
     }
 }

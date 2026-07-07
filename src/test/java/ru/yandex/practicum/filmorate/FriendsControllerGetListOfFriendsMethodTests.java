@@ -46,9 +46,9 @@ public class FriendsControllerGetListOfFriendsMethodTests {
     void getListOfFriends_existUsers_returnsListOfFriends() {
         assertTrue(userService.getListOfFriends(1L).contains(userSecond));
         assertTrue(userService.getListOfFriends(2L).contains(userFirst));
-        assertTrue(inMemoryUserStorage.getUserById(1L).getFriends().contains(2L),
+        assertTrue(userService.getUserById(1L).getFriends().contains(2L),
                 "Ожидается наличие в списке пользователя с ID-2");
-        assertTrue(inMemoryUserStorage.getUserById(2L).getFriends().contains(1L),
+        assertTrue(userService.getUserById(2L).getFriends().contains(1L),
                 "Ожидается наличие в списке пользователя с ID-2");
     }
 

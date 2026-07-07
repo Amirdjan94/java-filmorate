@@ -54,7 +54,7 @@ public class LikesControllerDeleteLikeMethodTests {
     void deleteLike_existUsersAndFilm_returnsSuccessStatus() {
         assertTrue(filmService.deleteLike(1L, 1L).containsValue("success"),
                 "Ожидается сообщение об успешном обработке запроса");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().isEmpty(),
+        assertTrue(filmService.getFilmById(1L).getLikes().isEmpty(),
                 "Ожидается пустой список лайков");
     }
 
@@ -62,7 +62,7 @@ public class LikesControllerDeleteLikeMethodTests {
     void deleteLike_notExistUsersID_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> filmService.deleteLike(1L, 2L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().contains(1L),
+        assertTrue(filmService.getFilmById(1L).getLikes().contains(1L),
                 "В списке лайков ожидается ID-1");
     }
 
@@ -70,7 +70,7 @@ public class LikesControllerDeleteLikeMethodTests {
     void deleteLike_notExistFilmId_returnsObjectNotFoundException() {
         assertThrows(ObjectNotFoundException.class, () -> filmService.deleteLike(2L, 1L),
                 "Ожидается выброс исключения ObjectNotFoundException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().contains(1L),
+        assertTrue(filmService.getFilmById(1L).getLikes().contains(1L),
                 "В списке лайков ожидается ID-1");
     }
 
@@ -78,7 +78,7 @@ public class LikesControllerDeleteLikeMethodTests {
     void deleteLike_incorrectFilmId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> filmService.deleteLike(-1L, 1L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().contains(1L),
+        assertTrue(filmService.getFilmById(1L).getLikes().contains(1L),
                 "В списке лайков ожидается ID-1");
     }
 
@@ -86,7 +86,7 @@ public class LikesControllerDeleteLikeMethodTests {
     void addLike_incorrectUserId_returnsConditionsNotMetException() {
         assertThrows(ConditionsNotMetException.class, () -> filmService.deleteLike(1L, -1L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertTrue(inMemoryFilmStorage.getFilmById(1L).getLikes().contains(1L),
+        assertTrue(filmService.getFilmById(1L).getLikes().contains(1L),
                 "В списке лайков ожидается ID-1");
     }
 }
