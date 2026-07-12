@@ -2,10 +2,12 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.UserController;
-import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -13,18 +15,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class UserControllerPutMethodTests {
-    UserController userController;
+    @Autowired
+    InMemoryUserStorage inMemoryUserStorage;
+    @Autowired
+    UserService userService;
 
     @BeforeEach
     void beforeEach() {
-        userController = new UserController();
+        inMemoryUserStorage.clearStorage();
         User validUser = User.builder()
                 .email("example@mail.ru")
                 .login("userLogin")
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("Jhon")
                 .build();
-        userController.create(validUser);
+        inMemoryUserStorage.create(validUser);
     }
 
     @Test
@@ -36,8 +41,8 @@ class UserControllerPutMethodTests {
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("Jhon")
                 .build();
-        assertEquals(userController.update(validNewEmailUser), validNewEmailUser);
-        assertTrue(userController.getUsers().toString().contains("exampleNew@mail.ru"), "Ожидается список с новыми значениями");
+        assertEquals(userService.update(validNewEmailUser), validNewEmailUser);
+        assertTrue(inMemoryUserStorage.getUsers().toString().contains("exampleNew@mail.ru"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -49,8 +54,8 @@ class UserControllerPutMethodTests {
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("Jhon")
                 .build();
-        assertThrows(ConditionsNotMetException.class, () -> userController.update(updateNotExistIdUser));
-        assertFalse(userController.getUsers().toString().contains("exampleNew@mail.ru"), "Ожидается список без новых значений");
+        assertThrows(ObjectNotFoundException.class, () -> userService.update(updateNotExistIdUser));
+        assertFalse(inMemoryUserStorage.getUsers().toString().contains("exampleNew@mail.ru"), "Ожидается список без новых значений");
     }
 
     @Test
@@ -62,8 +67,8 @@ class UserControllerPutMethodTests {
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("Jhon")
                 .build();
-        assertEquals(userController.update(validNewLoginUser), validNewLoginUser);
-        assertTrue(userController.getUsers().toString().contains("newUserLogin"), "Ожидается список с новыми значениями");
+        assertEquals(userService.update(validNewLoginUser), validNewLoginUser);
+        assertTrue(inMemoryUserStorage.getUsers().toString().contains("newUserLogin"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -75,8 +80,8 @@ class UserControllerPutMethodTests {
                 .birthday(LocalDate.of(1995, 12, 27))
                 .name("Jhon")
                 .build();
-        assertEquals(userController.update(validNewBirthdayUser), validNewBirthdayUser);
-        assertTrue(userController.getUsers().toString().contains("1995-12-27"), "Ожидается список с новыми значениями");
+        assertEquals(userService.update(validNewBirthdayUser), validNewBirthdayUser);
+        assertTrue(inMemoryUserStorage.getUsers().toString().contains("1995-12-27"), "Ожидается список с новыми значениями");
     }
 
     @Test
@@ -88,7 +93,7 @@ class UserControllerPutMethodTests {
                 .birthday(LocalDate.of(1995, 12, 27))
                 .name("NewJhon")
                 .build();
-        assertEquals(userController.update(validNewNameUser), validNewNameUser);
-        assertTrue(userController.getUsers().toString().contains("NewJhon"), "Ожидается список с новыми значениями");
+        assertEquals(userService.update(validNewNameUser), validNewNameUser);
+        assertTrue(inMemoryUserStorage.getUsers().toString().contains("NewJhon"), "Ожидается список с новыми значениями");
     }
 }

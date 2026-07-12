@@ -2,9 +2,11 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.controller.UserController;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -12,11 +14,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class UserControllerPostMethodTests {
-    UserController userController;
+    @Autowired
+    InMemoryUserStorage inMemoryUserStorage;
+    @Autowired
+    UserService userService;
 
     @BeforeEach
     void beforeEach() {
-        userController = new UserController();
+        inMemoryUserStorage.clearStorage();
     }
 
     @Test
@@ -27,8 +32,8 @@ class UserControllerPostMethodTests {
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("Jhon")
                 .build();
-        assertEquals(userController.create(validUser), validUser);
-        assertFalse(userController.getUsers().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(userService.create(validUser), validUser);
+        assertFalse(inMemoryUserStorage.getUsers().isEmpty(), "Ожидается НЕ пустой список");
     }
 
     @Test
@@ -45,7 +50,7 @@ class UserControllerPostMethodTests {
                 .birthday(LocalDate.of(1994, 12, 27))
                 .name("")
                 .build();
-        assertEquals(userController.create(emptyNameUser), newValidUser);
-        assertFalse(userController.getUsers().isEmpty(), "Ожидается НЕ пустой список");
+        assertEquals(userService.create(emptyNameUser), newValidUser);
+        assertFalse(inMemoryUserStorage.getUsers().isEmpty(), "Ожидается НЕ пустой список");
     }
 }
