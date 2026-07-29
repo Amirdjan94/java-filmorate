@@ -4,6 +4,14 @@ import lombok.Data;
 
 @Data
 public class Mpa {
-    private Long ratingMpaId;
-    private String ratingMPAname;
+    private Long id;
+    private String name;
+
+    public Mpa(Long id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public Mpa() {
+    }
 }

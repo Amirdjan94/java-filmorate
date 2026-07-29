@@ -12,7 +12,6 @@ import java.util.Set;
 @Data
 @Builder
 public class Film {
-    //    @EqualsAndHashCode.Exclude
     private Long id;
     @NotBlank
     @Size(max = 200)
@@ -30,10 +29,12 @@ public class Film {
     private Set<Long> likes;
     private Mpa mpa;
 
+    private Set<Genres> genres;
+
 
     @Builder
     public Film(Long id, String name, String description, LocalDate releaseDate, Integer duration,
-                Set<Long> likes, Mpa mpa) {
+                Set<Long> likes, Mpa mpa, Set<Genres> genres) {
         this.description = description;
         this.duration = duration;
         this.id = id;
@@ -41,9 +42,10 @@ public class Film {
         this.name = name;
         this.releaseDate = releaseDate;
         this.mpa = mpa;
+        this.genres = genres != null ? genres : new HashSet<Genres>();
     }
 
     public Film() {
-
+        this.genres = new HashSet<Genres>();
     }
 }

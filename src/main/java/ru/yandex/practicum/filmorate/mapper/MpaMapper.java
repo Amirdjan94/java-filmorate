@@ -11,8 +11,8 @@ public class MpaMapper {
 
     public static MpaDto mapToMpaDto(Mpa mpa) {
         MpaDto mpaDto = new MpaDto();
-        mpaDto.setId(mpa.getRatingMpaId());
-        mpaDto.setName(mpa.getRatingMPAname());
+        mpaDto.setId(mpa.getId());
+        mpaDto.setName(mpa.getName());
         return mpaDto;
     }
 }

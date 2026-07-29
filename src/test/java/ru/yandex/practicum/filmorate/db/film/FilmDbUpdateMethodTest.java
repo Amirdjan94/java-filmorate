@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
 
 import java.time.LocalDate;
@@ -29,6 +30,7 @@ public class FilmDbUpdateMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
+                .mpa(new Mpa(1L, "тест"))
                 .build()
         );
     }
@@ -40,6 +42,7 @@ public class FilmDbUpdateMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
+                .mpa(new Mpa(1L, "тест"))
                 .build();
         updateFilm = filmStorage.update(updateFilm, newFilm);
         assertThat(updateFilm).hasFieldOrPropertyWithValue("name", "update New film");
@@ -52,6 +55,7 @@ public class FilmDbUpdateMethodTest {
                 .description("update Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
+                .mpa(new Mpa(1L, "тест"))
                 .build();
         updateFilm = filmStorage.update(updateFilm, newFilm);
         assertThat(updateFilm).hasFieldOrPropertyWithValue("description", "update Good new film");
@@ -64,6 +68,7 @@ public class FilmDbUpdateMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 23))
                 .duration(100)
+                .mpa(new Mpa(1L, "тест"))
                 .build();
         updateFilm = filmStorage.update(updateFilm, newFilm);
         assertThat(updateFilm).hasFieldOrPropertyWithValue("releaseDate", LocalDate.of(1994, 07, 23));
@@ -76,6 +81,7 @@ public class FilmDbUpdateMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 23))
                 .duration(101)
+                .mpa(new Mpa(1L, "тест"))
                 .build();
         updateFilm = filmStorage.update(updateFilm, newFilm);
         assertThat(updateFilm).hasFieldOrPropertyWithValue("duration", 101);
