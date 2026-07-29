@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.UserDbStorage;
@@ -37,6 +38,7 @@ public class FilmDbDeleteLikeMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
+                .mpa(new Mpa())
                 .build()
         );
         newUser = userStorage.create(

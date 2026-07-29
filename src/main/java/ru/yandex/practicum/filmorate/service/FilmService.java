@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
 import java.util.Collection;
 import java.util.Map;
@@ -16,17 +18,21 @@ import java.util.Optional;
 import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
 
 @Service
-//@AllArgsConstructor
 @Slf4j
 public class FilmService {
 
-
     private final FilmStorage inMemoryFilmStorage;
+    private final MpaStorage mpaStorage;
+    private final GenresService genresService;
     private final UserService userService;
 
-    public FilmService(@Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage, UserService userService) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage, UserService userService,
+                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                       @Qualifier("genresService") GenresService genresService) {
         this.inMemoryFilmStorage = inMemoryFilmStorage;
         this.userService = userService;
+        this.mpaStorage = mpaStorage;
+        this.genresService = genresService;
     }
 
     public Collection<Film> getFilms() {
@@ -35,6 +41,8 @@ public class FilmService {
 
     public Film create(Film film) {
         validateAndNormalizeFields(film);
+        checkMpa(film);
+        checkGenres(film);
         return inMemoryFilmStorage.create(film);
     }
 
@@ -44,6 +52,8 @@ public class FilmService {
             throw new ConditionsNotMetException("Id не должен быть пустым");
         }
         normalizeFields(film);
+        checkMpa(film);
+        checkGenres(film);
         Film currentFilm = getFilmById(film.getId());
         return inMemoryFilmStorage.update(film, currentFilm);
     }
@@ -117,6 +127,22 @@ public class FilmService {
     private void checkFilmsId(Long filmId) {
         if (filmId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + filmId);
+        }
+    }
+
+    private void checkGenres(Film film) {
+        if (film.getGenres() != null) {
+            for (Genres genres : film.getGenres()) {
+                genresService.getGenresById(genres.getId());
+            }
+        }
+    }
+
+    private void checkMpa(Film film) {
+        if (film.getMpa() != null) {
+            if (mpaStorage.getMpaById(film.getMpa().getId()).isEmpty()) {
+                throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
+            }
         }
     }
 }
