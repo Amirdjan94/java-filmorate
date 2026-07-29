@@ -4,11 +4,12 @@ import com.sun.jdi.request.DuplicateRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
+@Component()
 @Slf4j
 public class InMemoryFilmStorage implements FilmStorage {
     public Map<Long, Film> films = new HashMap<>();
@@ -64,6 +65,16 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted(comparator.reversed())
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addLike(Film film, User user) { // добавление лайка
+        film.getLikes().add(user.getId());
+    }
+
+    @Override
+    public boolean deleteLike(Film film, User user) { // удаление лайка
+        return film.getLikes().remove(user.getId());
     }
 
     public void clearStorage() {

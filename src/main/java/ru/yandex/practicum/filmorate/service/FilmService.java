@@ -1,14 +1,13 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Map;
@@ -17,13 +16,18 @@ import java.util.Optional;
 import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
 
 @Service
-@AllArgsConstructor
+//@AllArgsConstructor
 @Slf4j
 public class FilmService {
 
+
     private final FilmStorage inMemoryFilmStorage;
-    private final UserStorage inMemoryUserStorage;
     private final UserService userService;
+
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage, UserService userService) {
+        this.inMemoryFilmStorage = inMemoryFilmStorage;
+        this.userService = userService;
+    }
 
     public Collection<Film> getFilms() {
         return inMemoryFilmStorage.getFilms();
@@ -56,7 +60,8 @@ public class FilmService {
     public Map<String, String> addLike(Long filmId, Long userId) { // добавление лайка
         log.info("Получили запрос на добавление лайка в фильм с ID-" + filmId + " пользователем с ID-" + userId);
         User user = userService.getUserById(userId); // Если пользователя нет по указанному ID или не валидный ID, будет выброшен exception
-        this.getFilmById(filmId).getLikes().add(user.getId());
+        Film film = getFilmById(filmId);
+        inMemoryFilmStorage.addLike(film, user);
         log.info("Лайк успешно добавлен");
         return Map.of(
                 "operation", "Add new like"
@@ -66,7 +71,8 @@ public class FilmService {
     public Map<String, String> deleteLike(Long filmId, Long userId) { // удаление лайка
         log.info("Получили запрос на удаление лайка из фильма с ID-" + filmId + " пользователем с ID-" + userId);
         User user = userService.getUserById(userId); // Если пользоваеля нет по указанному ID или не валидный ID, будет выброшен exception
-        if (this.getFilmById(filmId).getLikes().remove(user.getId())) {
+        Film film = getFilmById(filmId);
+        if (inMemoryFilmStorage.deleteLike(film, user)) {
             return Map.of(
                     "status", "success",
                     "operation", "Delete like"

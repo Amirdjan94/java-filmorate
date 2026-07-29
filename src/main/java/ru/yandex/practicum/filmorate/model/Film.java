@@ -5,18 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.format.annotation.DateTimeFormat;
-
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Film..
- */
 @Data
 @Builder
 public class Film {
-    @EqualsAndHashCode.Exclude
+    //    @EqualsAndHashCode.Exclude
     private Long id;
     @NotBlank
     @Size(max = 200)
@@ -32,15 +28,22 @@ public class Film {
     private Integer duration;
     @EqualsAndHashCode.Exclude
     private Set<Long> likes;
+    private Mpa mpa;
+
 
     @Builder
     public Film(Long id, String name, String description, LocalDate releaseDate, Integer duration,
-                Set<Long> likes) {
+                Set<Long> likes, Mpa mpa) {
         this.description = description;
         this.duration = duration;
         this.id = id;
         this.likes = likes != null ? likes : new HashSet<>();
         this.name = name;
         this.releaseDate = releaseDate;
+        this.mpa = mpa;
+    }
+
+    public Film() {
+
     }
 }

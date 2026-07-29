@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
@@ -11,23 +11,24 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class UserService {
 
     private final UserStorage inMemoryUserStorage;
+
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+        this.inMemoryUserStorage = inMemoryUserStorage;
+    }
+
 
     public Map<String, String> addFriend(Long userId, Long friendId) { // добавление в друзья
         log.info("Получили запрос на добавление в друзья для пользователя с ID-" + userId + " и ID-" + friendId);
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        this.getUserById(userId).getFriends().add(friendId);
-        this.getUserById(friendId).getFriends().add(userId);
+        inMemoryUserStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -40,8 +41,7 @@ public class UserService {
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        this.getUserById(userId).getFriends().remove(friendId);
-        this.getUserById(friendId).getFriends().remove(userId);
+        inMemoryUserStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -51,9 +51,7 @@ public class UserService {
 
     public Collection<User> getListOfFriends(Long userId) { // список пользователей, являющихся его друзьями
         log.info("Получили запрос на список друзей для пользователя с ID-" + userId);
-        return this.getUserById(userId).getFriends().stream()
-                .map(this::getUserById)
-                .collect(Collectors.toList());
+        return inMemoryUserStorage.getListOfFriends(getUserById(userId));
     }
 
     public Collection<User> getListOfCommonFriends(Long firstUserId, Long secondUserId) { // вывод списка общих друзей
@@ -62,11 +60,7 @@ public class UserService {
         checkDuplicateId(firstUserId, secondUserId);
         log.debug("Корректные входные данные");
         log.info("Передали список общих друзей");
-        Set<Long> firstUserFriendsIDs = this.getUserById(firstUserId).getFriends();
-        return this.getUserById(secondUserId).getFriends().stream()
-                .filter(firstUserFriendsIDs::contains)
-                .map(this::getUserById)
-                .collect(Collectors.toList());
+        return inMemoryUserStorage.getListOfCommonFriends(getUserById(firstUserId), getUserById(secondUserId));
     }
 
     public Collection<User> getUsers() {

@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -15,13 +14,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class UserControllerPutMethodTests {
-    @Autowired
     InMemoryUserStorage inMemoryUserStorage;
-    @Autowired
     UserService userService;
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
         inMemoryUserStorage.clearStorage();
         User validUser = User.builder()
                 .email("example@mail.ru")

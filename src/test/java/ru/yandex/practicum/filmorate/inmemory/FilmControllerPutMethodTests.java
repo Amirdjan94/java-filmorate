@@ -1,14 +1,15 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -16,14 +17,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class FilmControllerPutMethodTests {
-    @Autowired
     InMemoryFilmStorage inMemoryFilmStorage;
-    @Autowired
     FilmService filmService;
     Film validFilm;
 
     @BeforeEach
     void beforeEach() {
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+
+        filmService = new FilmService(inMemoryFilmStorage, new UserService(new InMemoryUserStorage()));
         inMemoryFilmStorage.clearStorage();
         validFilm = Film.builder()
                 .name("New film")
