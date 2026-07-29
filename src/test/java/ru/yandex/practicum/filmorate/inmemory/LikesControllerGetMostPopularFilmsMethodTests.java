@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -17,13 +16,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class LikesControllerGetMostPopularFilmsMethodTests {
-    @Autowired
     UserService userService;
-    @Autowired
     InMemoryUserStorage inMemoryUserStorage;
-    @Autowired
     InMemoryFilmStorage inMemoryFilmStorage;
-    @Autowired
     FilmService filmService;
     User userFirst = User.builder()
             .email("example1@mail.ru")
@@ -47,6 +42,10 @@ public class LikesControllerGetMostPopularFilmsMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+        filmService = new FilmService(inMemoryFilmStorage, userService);
         inMemoryUserStorage.clearStorage();
         inMemoryFilmStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);

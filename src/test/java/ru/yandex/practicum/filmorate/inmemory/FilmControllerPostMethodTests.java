@@ -1,13 +1,14 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
@@ -15,13 +16,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class FilmControllerPostMethodTests {
-    @Autowired
     InMemoryFilmStorage inMemoryFilmStorage;
-    @Autowired
     FilmService filmService;
 
     @BeforeEach
     void beforeEach() {
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+
+        filmService = new FilmService(inMemoryFilmStorage, new UserService(new InMemoryUserStorage()));
         inMemoryFilmStorage.clearStorage();
     }
 

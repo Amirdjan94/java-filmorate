@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
@@ -17,9 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 class UserControllerGetUserByIdMethodTests {
-    @Autowired
     InMemoryUserStorage inMemoryUserStorage;
-    @Autowired
     UserService userService;
     User user = User.builder()
             .email("example@mail.ru")
@@ -30,6 +27,8 @@ class UserControllerGetUserByIdMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(user);
     }

@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
@@ -20,13 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 public class LikesControllerDeleteLikeMethodTests {
-    @Autowired
     UserService userService;
-    @Autowired
     InMemoryUserStorage inMemoryUserStorage;
-    @Autowired
     InMemoryFilmStorage inMemoryFilmStorage;
-    @Autowired
     FilmService filmService;
     User userFirst = User.builder()
             .email("example1@mail.ru")
@@ -43,6 +38,10 @@ public class LikesControllerDeleteLikeMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
+        inMemoryFilmStorage = new InMemoryFilmStorage();
+        filmService = new FilmService(inMemoryFilmStorage, userService);
         inMemoryUserStorage.clearStorage();
         inMemoryFilmStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
