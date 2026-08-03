@@ -4,15 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
-import ru.yandex.practicum.filmorate.mapper.GenresMapper;
-import ru.yandex.practicum.filmorate.dto.GenresDto;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.storage.GenresStorage;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -24,17 +21,17 @@ public class GenresService {
         this.genresStorage = genresStorage;
     }
 
-    public Collection<GenresDto> getGenres() {
-        return genresStorage.getGenres().stream().map(GenresMapper::mapToGenresDto).collect(Collectors.toList());
+    public Collection<Genres> getGenres() {
+        return genresStorage.getGenres();
     }
 
-    public GenresDto getGenresById(Long id) {
+    public Genres getGenresById(Long id) {
         checkGenresId(id);
         Optional<Genres> genres = genresStorage.getGenresById(id);
         if (genres.isEmpty()) {
             throw new ObjectNotFoundException("Жанр с id=" + id + " не найден");
         }
-        return GenresMapper.mapToGenresDto(genres.get());
+        return genres.get();
     }
 
     private void checkGenresId(Long filmId) {

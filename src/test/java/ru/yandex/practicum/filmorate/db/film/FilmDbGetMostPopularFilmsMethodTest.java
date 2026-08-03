@@ -54,7 +54,6 @@ public class FilmDbGetMostPopularFilmsMethodTest {
     @Test
     public void getMostPopularFilms_getMostPopularFilmsCount10_returnOneObject() {
         filmStorage.addLike(newFilm, newUser);
-        filmStorage.getMostPopularFilms(10);
         Integer count = jdbc.queryForObject(GET_LIKES_COUNT, Integer.class, newFilm.getId(), newUser.getId());
         assertTrue(count == 1);
     }

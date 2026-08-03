@@ -16,6 +16,10 @@ import java.util.stream.Collectors;
 public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String FIND_ALL_FILMS = "SELECT * FROM film " +
             "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId";
+    private static final String FIND_MOST_POPULAR_FILMS = "SELECT film_id FROM film_likes " +
+            "GROUP BY film_id " +
+            "ORDER BY COUNT(film_likes.*) DESC " +
+            "LIMIT ?";
     private static final String FIND_FILM_BY_ID = "SELECT * FROM film " +
             "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId " +
             "WHERE film.film_id = ?";
@@ -74,7 +78,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        return findMany(FIND_ALL_FILMS);
+        List<Film> listOfFilms = findMany(FIND_ALL_FILMS);
+        for (int i = 0; i < listOfFilms.size(); i++) {
+            Film film = getFilmById(listOfFilms.get(i).getId()).get();
+            listOfFilms.set(i, film);
+        }
+        return listOfFilms;
     }
 
     @Override
@@ -96,13 +105,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public Collection<Film> getMostPopularFilms(int count) {
-        List<Film> films = findMany(FIND_ALL_FILMS);
-        Map<Film, Integer> map = films.stream()
-                .collect(Collectors.toMap(film -> film, film -> getLikesCount(film)));
-        return map.entrySet().stream()
-                .sorted(Map.Entry.<Film, Integer>comparingByValue(Comparator.reverseOrder()))
-                .limit(count)
-                .map(Map.Entry::getKey)
+        List<Long> popularFilmsIDs = jdbc.queryForList(FIND_MOST_POPULAR_FILMS, Long.class, count);
+        return popularFilmsIDs.stream()
+                .map((id) -> getFilmById(id).get())
                 .collect(Collectors.toList());
     }
 
@@ -129,10 +134,13 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     private void insertGenresWithFilm(Film film) {
-        for (Genres genres : film.getGenres()) {
-            jdbc.update(INSERT_GENRES_WITH_FILM,
-                    film.getId(),
-                    genres.getId());
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Object[]> batchArgs = new ArrayList<>();
+            for (Genres genre : film.getGenres()) {
+                batchArgs.add(new Object[]{film.getId(), genre.getId()});
+            }
+            jdbc.batchUpdate(INSERT_GENRES_WITH_FILM, batchArgs);
         }
+
     }
 }

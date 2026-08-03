@@ -16,10 +16,10 @@ import java.util.Optional;
 @Slf4j
 public class UserService {
 
-    private final UserStorage inMemoryUserStorage;
+    private final UserStorage userStorage;
 
     public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
-        this.inMemoryUserStorage = inMemoryUserStorage;
+        this.userStorage = inMemoryUserStorage;
     }
 
 
@@ -28,7 +28,7 @@ public class UserService {
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        inMemoryUserStorage.addFriend(getUserById(userId), getUserById(friendId));
+        userStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -41,7 +41,7 @@ public class UserService {
         log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
-        inMemoryUserStorage.deleteFriend(getUserById(userId), getUserById(friendId));
+        userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -51,7 +51,7 @@ public class UserService {
 
     public Collection<User> getListOfFriends(Long userId) { // список пользователей, являющихся его друзьями
         log.info("Получили запрос на список друзей для пользователя с ID-" + userId);
-        return inMemoryUserStorage.getListOfFriends(getUserById(userId));
+        return userStorage.getListOfFriends(getUserById(userId));
     }
 
     public Collection<User> getListOfCommonFriends(Long firstUserId, Long secondUserId) { // вывод списка общих друзей
@@ -60,11 +60,11 @@ public class UserService {
         checkDuplicateId(firstUserId, secondUserId);
         log.debug("Корректные входные данные");
         log.info("Передали список общих друзей");
-        return inMemoryUserStorage.getListOfCommonFriends(getUserById(firstUserId), getUserById(secondUserId));
+        return userStorage.getListOfCommonFriends(getUserById(firstUserId), getUserById(secondUserId));
     }
 
     public Collection<User> getUsers() {
-        return inMemoryUserStorage.getUsers();
+        return userStorage.getUsers();
     }
 
     public User create(User user) {
@@ -72,7 +72,7 @@ public class UserService {
             user.setName(user.getLogin());
         }
         normalizeFields(user);
-        return inMemoryUserStorage.create(user);
+        return userStorage.create(user);
     }
 
     public User update(User user) {
@@ -82,12 +82,12 @@ public class UserService {
         }
         normalizeFields(user);
         User currentUser = getUserById(user.getId());
-        return inMemoryUserStorage.update(user, currentUser);
+        return userStorage.update(user, currentUser);
     }
 
     public User getUserById(Long id) {
         checkUsersId(id);
-        Optional<User> user = inMemoryUserStorage.getUserById(id);
+        Optional<User> user = userStorage.getUserById(id);
         if (user.isEmpty()) {
             throw new ObjectNotFoundException("Пользователь с id=" + id + " не найден");
         }
