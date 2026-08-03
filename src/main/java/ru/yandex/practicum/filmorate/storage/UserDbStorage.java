@@ -8,11 +8,10 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Repository
 @Slf4j
-public class UserDbStorage extends BaseRepository<User> implements UserStorage {
+public class  UserDbStorage extends BaseRepository<User> implements UserStorage {
     private static final String INSERT_USER = "INSERT INTO users(email, login, name, birthday)" +
             "VALUES (?, ?, ?, ?)";
     private static final String FIND_ALL_USERS = "SELECT * FROM users";
@@ -39,6 +38,13 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     private static final String DELETE_FRIEND = "DELETE FROM follows WHERE (following_user_id = ? AND followed_user_id = ?)";
     private static final String SEARCH_FOLLOWED_FRIEND_GET_CONF = "SELECT confirmation FROM follows " +
             "WHERE following_user_id = ? AND followed_user_id = ?";
+    private static final String GET_FRIENDS = "SELECT users.* FROM users " +
+            "JOIN follows ON users.user_id = follows.following_user_id " +
+            "WHERE follows.followed_user_id = ? AND follows.confirmation = true " +
+            "UNION " +
+            "SELECT users.* FROM users " +
+            "JOIN follows ON users.user_id = follows.followed_user_id " +
+            "WHERE follows.following_user_id = ?";
 
     public UserDbStorage(JdbcTemplate jdbc, RowMapper<User> mapper) {
         super(jdbc, mapper);
@@ -119,10 +125,7 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
 
     @Override
     public Collection<User> getListOfFriends(User user) {
-        List<User> listFollowingFriend = findMany(GET_FOLLOWING_FRIENDS, user.getId());
-        List<User> listFollowedFriend = findMany(GET_FOLLOWED_FRIENDS, user.getId());
-        return Stream.concat(listFollowingFriend.stream(), listFollowedFriend.stream())
-                .collect(Collectors.toList());
+        return findMany(GET_FRIENDS, user.getId(), user.getId());
     }
 
     @Override
@@ -132,6 +135,7 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
         return firstUserFriends.stream()
                 .filter(secondUserFriends::contains)
                 .collect(Collectors.toList());
+        // НЕ смог реализовать запрос списка общих друзей одни запросом, подскажи пожалуйста, как это можно сделать
     }
 
     public void deleteAllUsers() {

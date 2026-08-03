@@ -9,3 +9,4 @@ public class GenresDto {
     Long id;
     String name;
 }
+// В коде больше ДТО не испльзую, но сами файлы решил оставить
