@@ -16,10 +16,14 @@ import java.util.stream.Collectors;
 public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String FIND_ALL_FILMS = "SELECT * FROM film " +
             "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId";
-    private static final String FIND_MOST_POPULAR_FILMS = "SELECT film_id FROM film_likes " +
-            "GROUP BY film_id " +
-            "ORDER BY COUNT(film_likes.*) DESC " +
-            "LIMIT ?";
+    private static final String FIND_MOST_POPULAR_FILMS =
+            "SELECT film.*, rating_mpa.ratingMPAname FROM film_likes " +
+                    "JOIN film ON film.film_id = film_likes.film_id " +
+                    "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId " +
+                    "GROUP BY film.film_id, film.name, film.description, film.releaseDate, " +
+                    "film.duration, film.ratingMpaId, rating_mpa.ratingMPAname " +
+                    "ORDER BY COUNT(film_likes.film_id) DESC " +
+                    "LIMIT ?";
     private static final String FIND_FILM_BY_ID = "SELECT * FROM film " +
             "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId " +
             "WHERE film.film_id = ?";
@@ -78,12 +82,24 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public List<Film> getFilms() {
-        List<Film> listOfFilms = findMany(FIND_ALL_FILMS);
-        for (int i = 0; i < listOfFilms.size(); i++) {
-            Film film = getFilmById(listOfFilms.get(i).getId()).get();
-            listOfFilms.set(i, film);
+        List<Film> films = findMany(FIND_ALL_FILMS);
+        if (films.isEmpty()) {
+            return films;
         }
-        return listOfFilms;
+        Map<Long, Set<Genres>> genresMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fg.film_id, g.genre_id, g.genre_name " +
+                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                        "WHERE fg.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
+                }
+        );
+        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        return films;
     }
 
     @Override
@@ -105,10 +121,24 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
     @Override
     public Collection<Film> getMostPopularFilms(int count) {
-        List<Long> popularFilmsIDs = jdbc.queryForList(FIND_MOST_POPULAR_FILMS, Long.class, count);
-        return popularFilmsIDs.stream()
-                .map((id) -> getFilmById(id).get())
-                .collect(Collectors.toList());
+        List<Film> films = findMany(FIND_MOST_POPULAR_FILMS, count);
+        if (films.isEmpty()) {
+            return films;
+        }
+        Map<Long, Set<Genres>> genresMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fg.film_id, g.genre_id, g.genre_name " +
+                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                        "WHERE fg.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
+                }
+        );
+        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        return films;
     }
 
     @Override

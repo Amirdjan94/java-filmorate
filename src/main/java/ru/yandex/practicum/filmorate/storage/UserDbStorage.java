@@ -7,11 +7,10 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
-public class  UserDbStorage extends BaseRepository<User> implements UserStorage {
+public class UserDbStorage extends BaseRepository<User> implements UserStorage {
     private static final String INSERT_USER = "INSERT INTO users(email, login, name, birthday)" +
             "VALUES (?, ?, ?, ?)";
     private static final String FIND_ALL_USERS = "SELECT * FROM users";
@@ -26,12 +25,6 @@ public class  UserDbStorage extends BaseRepository<User> implements UserStorage 
     private static final String CONFIRMATION_ADD_FRIEND = "UPDATE follows SET confirmation = true " +
             "WHERE (following_user_id = ? AND followed_user_id = ?) " +
             "OR (following_user_id = ? AND followed_user_id = ?)";
-    private static final String GET_FOLLOWING_FRIENDS = "SELECT users.* FROM users " +
-            "JOIN follows ON users.user_id = follows.following_user_id " +
-            "WHERE follows.followed_user_id = ? AND follows.confirmation = true";
-    private static final String GET_FOLLOWED_FRIENDS = "SELECT users.* FROM users " +
-            "JOIN follows ON users.user_id = follows.followed_user_id " +
-            "WHERE follows.following_user_id = ?";
     private static final String SEARCH_FOLLOWED_FRIEND = "SELECT COUNT(*) FROM follows " +
             "WHERE following_user_id = ? AND followed_user_id = ?";
     private static final String UPDATE_SET_FALSE_CONF = "UPDATE follows SET confirmation = ? WHERE followed_user_id = ?";
@@ -130,12 +123,13 @@ public class  UserDbStorage extends BaseRepository<User> implements UserStorage 
 
     @Override
     public Collection<User> getListOfCommonFriends(User firstUser, User secondUser) {
-        List<User> firstUserFriends = new ArrayList<>(getListOfFriends(firstUser));
-        List<User> secondUserFriends = new ArrayList<>(getListOfFriends(secondUser));
-        return firstUserFriends.stream()
-                .filter(secondUserFriends::contains)
-                .collect(Collectors.toList());
-        // НЕ смог реализовать запрос списка общих друзей одни запросом, подскажи пожалуйста, как это можно сделать
+        return findMany("SELECT u.* " +
+                        "FROM users u " +
+                        "JOIN follows f1 ON u.user_id = f1.followed_user_id " +
+                        "JOIN follows f2 ON u.user_id = f2.followed_user_id " +
+                        "WHERE f1.following_user_id = ? " +
+                        "  AND f2.following_user_id = ? ",
+                firstUser.getId(), secondUser.getId());
     }
 
     public void deleteAllUsers() {
