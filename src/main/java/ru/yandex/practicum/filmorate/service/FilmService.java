@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
@@ -132,11 +131,8 @@ public class FilmService {
 
     private void checkGenres(Film film) {
         if (film.getGenres() != null) {
-            for (Genres genres : film.getGenres()) {
-                genresService.getGenresById(genres.getId());
-                // Не совсем понимаю зачем это нужно ? Именно передавать список объектов по этим id ...
-                // Да и если нет жанра по этому ид, все равно будет выброшено исключение в getGenresById
-                // Мне кажется это просто лишняя проверка, Прошу объясни в чем дело
+            if (genresService.getGenresListById(film.getGenres()).size() != film.getGenres().size()) {
+                throw new ObjectNotFoundException("Передан не существующий жанр");
             }
         }
     }

@@ -9,7 +9,9 @@ import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.storage.GenresStorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -38,5 +40,9 @@ public class GenresService {
         if (filmId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + filmId);
         }
+    }
+
+    public List<Genres> getGenresListById(Set<Genres> setGenres) {
+        return genresStorage.getGenresListById(setGenres);
     }
 }
