@@ -43,4 +43,7 @@ public class User {
         this.birthday = birthday;
         this.friends = friends != null ? friends : new HashSet<>();
     }
+
+    public User() {
+    }
 }
