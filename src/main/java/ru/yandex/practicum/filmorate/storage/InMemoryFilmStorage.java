@@ -4,11 +4,12 @@ import com.sun.jdi.request.DuplicateRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
+@Component()
 @Slf4j
 public class InMemoryFilmStorage implements FilmStorage {
     public Map<Long, Film> films = new HashMap<>();
@@ -66,6 +67,16 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public void addLike(Film film, User user) { // добавление лайка
+        film.getLikes().add(user.getId());
+    }
+
+    @Override
+    public boolean deleteLike(Film film, User user) { // удаление лайка
+        return film.getLikes().remove(user.getId());
+    }
+
     public void clearStorage() {
         films.clear();
     }
@@ -84,5 +95,25 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
+    }
+
+    @Override
+    public List<Film> getPopular(int count,
+                                 Integer genreId,
+                                 Integer year) {
+
+        return films.values().stream()
+                .filter(film -> genreId == null ||
+                        film.getGenres().stream()
+                                .anyMatch(g -> g.getId().equals(Long.valueOf(genreId))))
+                .filter(film -> year == null ||
+                        film.getReleaseDate().getYear() == year)
+                .sorted((f1, f2) ->
+                        Integer.compare(
+                                f2.getLikes().size(),
+                                f1.getLikes().size()
+                        ))
+                .limit(count)
+                .toList();
     }
 }
