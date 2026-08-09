@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
@@ -17,9 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 public class FriendsControllerGetListOfCommonFriendsMethodTests {
-    @Autowired
-    UserService userService;
-    @Autowired
+   UserService userService;
     InMemoryUserStorage inMemoryUserStorage;
     User userFirst = User.builder()
             .email("example1@mail.ru")
@@ -42,6 +39,8 @@ public class FriendsControllerGetListOfCommonFriendsMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
         inMemoryUserStorage.create(userSecond);
