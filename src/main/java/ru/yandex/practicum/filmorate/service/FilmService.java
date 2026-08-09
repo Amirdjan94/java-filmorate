@@ -1,14 +1,14 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.UserStorage;
+import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
 import java.util.Collection;
 import java.util.Map;
@@ -17,21 +17,32 @@ import java.util.Optional;
 import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
 
 @Service
-@AllArgsConstructor
 @Slf4j
 public class FilmService {
 
-    private final FilmStorage inMemoryFilmStorage;
-    private final UserStorage inMemoryUserStorage;
+    private final FilmStorage filmStorage;
+    private final MpaStorage mpaStorage;
+    private final GenresService genresService;
     private final UserService userService;
 
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
+                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                       @Qualifier("genresService") GenresService genresService) {
+        this.filmStorage = filmStorage;
+        this.userService = userService;
+        this.mpaStorage = mpaStorage;
+        this.genresService = genresService;
+    }
+
     public Collection<Film> getFilms() {
-        return inMemoryFilmStorage.getFilms();
+        return filmStorage.getFilms();
     }
 
     public Film create(Film film) {
         validateAndNormalizeFields(film);
-        return inMemoryFilmStorage.create(film);
+        checkMpa(film);
+        checkGenres(film);
+        return filmStorage.create(film);
     }
 
     public Film update(Film film) {
@@ -40,13 +51,15 @@ public class FilmService {
             throw new ConditionsNotMetException("Id не должен быть пустым");
         }
         normalizeFields(film);
+        checkMpa(film);
+        checkGenres(film);
         Film currentFilm = getFilmById(film.getId());
-        return inMemoryFilmStorage.update(film, currentFilm);
+        return filmStorage.update(film, currentFilm);
     }
 
     public Film getFilmById(Long id) {
         checkFilmsId(id);
-        Optional<Film> film = inMemoryFilmStorage.getFilmById(id);
+        Optional<Film> film = filmStorage.getFilmById(id);
         if (film.isEmpty()) {
             throw new ObjectNotFoundException("Фильм с id=" + id + " не найден");
         }
@@ -56,7 +69,8 @@ public class FilmService {
     public Map<String, String> addLike(Long filmId, Long userId) { // добавление лайка
         log.info("Получили запрос на добавление лайка в фильм с ID-" + filmId + " пользователем с ID-" + userId);
         User user = userService.getUserById(userId); // Если пользователя нет по указанному ID или не валидный ID, будет выброшен exception
-        this.getFilmById(filmId).getLikes().add(user.getId());
+        Film film = getFilmById(filmId);
+        filmStorage.addLike(film, user);
         log.info("Лайк успешно добавлен");
         return Map.of(
                 "operation", "Add new like"
@@ -66,7 +80,8 @@ public class FilmService {
     public Map<String, String> deleteLike(Long filmId, Long userId) { // удаление лайка
         log.info("Получили запрос на удаление лайка из фильма с ID-" + filmId + " пользователем с ID-" + userId);
         User user = userService.getUserById(userId); // Если пользоваеля нет по указанному ID или не валидный ID, будет выброшен exception
-        if (this.getFilmById(filmId).getLikes().remove(user.getId())) {
+        Film film = getFilmById(filmId);
+        if (filmStorage.deleteLike(film, user)) {
             return Map.of(
                     "status", "success",
                     "operation", "Delete like"
@@ -81,7 +96,7 @@ public class FilmService {
         if (count <= 0) {
             throw new ConditionsNotMetException("count должен быть больше нуля");
         }
-        return inMemoryFilmStorage.getMostPopularFilms(count);
+        return filmStorage.getMostPopularFilms(count);
     }
 
     private void validateAndNormalizeFields(Film film) {
@@ -111,6 +126,20 @@ public class FilmService {
     private void checkFilmsId(Long filmId) {
         if (filmId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + filmId);
+        }
+    }
+
+    private void checkGenres(Film film) {
+        if (film.getGenres() != null) {
+            if (genresService.getGenresListById(film.getGenres()).size() != film.getGenres().size()) {
+                throw new ObjectNotFoundException("Передан не существующий жанр");
+            }
+        }
+    }
+
+    private void checkMpa(Film film) {
+        if (film.getMpa() == null || mpaStorage.getMpaById(film.getMpa().getId()).isEmpty()) {
+            throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
         }
     }
 }

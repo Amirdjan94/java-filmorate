@@ -1,8 +1,7 @@
-package ru.yandex.practicum.filmorate;
+package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
@@ -15,10 +14,8 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-public class FriendsControllerDeleteFriendMethodTests {
-    @Autowired
+public class FriendsControllerAddFriendMethodTests {
     UserService userService;
-    @Autowired
     InMemoryUserStorage inMemoryUserStorage;
     User userFirst = User.builder()
             .email("example1@mail.ru")
@@ -35,40 +32,42 @@ public class FriendsControllerDeleteFriendMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        inMemoryUserStorage = new InMemoryUserStorage();
+        userService = new UserService(inMemoryUserStorage);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
         inMemoryUserStorage.create(userSecond);
-        userService.addFriend(1L, 2L);
     }
 
     @Test
-    void deleteFriend_existUsers_returnsSuccessStatus() {
-        assertTrue(userService.deleteFriend(1L, 2L).containsValue("success"));
+    void addFriends_existUsers_returnsSuccessStatus() {
+        assertTrue(userService.addFriend(1L, 2L).containsValue("success"),
+                "Ожидается сообщение об успешном обработке запроса");
+        assertTrue(userService.getUserById(1L).getFriends().contains(2L),
+                "В списке друзей ожидается ID-2");
+    }
+
+    @Test
+    void addFriends_notExistUsersId_returnsObjectNotFoundException() {
+        assertThrows(ObjectNotFoundException.class, () -> userService.addFriend(3L, 2L),
+                "Ожидается выброс исключения ObjectNotFoundException");
         assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
 
     @Test
-    void deleteFriend_notExistUsersId_returnsObjectNotFoundException() {
-        assertThrows(ObjectNotFoundException.class, () -> userService.deleteFriend(3L, 2L),
-                "Ожидается выброс исключения ObjectNotFoundException");
-        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
-                "Ожидается НЕ пустой список друзей");
+    void addFriends_incorrectUsersId_returnsConditionsNotMetException() {
+        assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(-3L, 2L),
+                "Ожидается выброс исключения ConditionsNotMetException");
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
+                "Ожидается пустой список друзей");
     }
 
     @Test
-    void deleteFriend_incorrectUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.deleteFriend(-3L, 2L),
+    void addFriends_sameUsersId_returnsConditionsNotMetException() {
+        assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(2L, 2L),
                 "Ожидается выброс исключения ConditionsNotMetException");
-        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
-                "Ожидается Не пустой список друзей");
-    }
-
-    @Test
-    void deleteFriend_sameUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.deleteFriend(2L, 2L),
-                "Ожидается выброс исключения ConditionsNotMetException");
-        assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
-                "Ожидается Не пустой список друзей");
+        assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
+                "Ожидается пустой список друзей");
     }
 }

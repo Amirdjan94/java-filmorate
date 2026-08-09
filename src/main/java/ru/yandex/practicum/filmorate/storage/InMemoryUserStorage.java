@@ -5,10 +5,8 @@ import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.excepton.DuplicatedDataException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -57,6 +55,34 @@ public class InMemoryUserStorage implements UserStorage {
         log.info("Получили запрос на передачу пользоватля с ID-" + id);
         log.info("Передали пользователя по ID-" + id);
         return Optional.ofNullable(users.get(id));
+    }
+
+    @Override
+    public void addFriend(User user, User friend) { // добавление в друзья
+        user.getFriends().add(friend.getId());
+        friend.getFriends().add(user.getId());
+    }
+
+    @Override
+    public void deleteFriend(User user, User friend) { // удаление из друзей
+        user.getFriends().remove(friend.getId());
+        friend.getFriends().remove(user.getId());
+    }
+
+    @Override
+    public Collection<User> getListOfFriends(User user) { // список пользователей, являющихся его друзьями
+        return user.getFriends().stream()
+                .map((id) -> getUserById(id).get())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<User> getListOfCommonFriends(User firstUser, User secondUser) { // вывод списка общих друзей
+        Set<Long> firstUserFriendsIDs = firstUser.getFriends();
+        return secondUser.getFriends().stream()
+                .filter(firstUserFriendsIDs::contains)
+                .map((id) -> getUserById(id).get())
+                .collect(Collectors.toList());
     }
 
     public void clearStorage() {
