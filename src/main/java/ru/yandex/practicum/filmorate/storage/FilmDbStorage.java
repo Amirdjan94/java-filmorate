@@ -41,6 +41,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             "VALUES (?, ?)";
     private static final String DELETE_LIKE = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
     private static final String DELETE_FILMS_GENRES = "DELETE FROM film_genres WHERE film_id = ?";
+    private static final String DELETE_FILM = "DELETE FROM film WHERE film_id = ?";
 
     public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper);
@@ -172,5 +173,13 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             jdbc.batchUpdate(INSERT_GENRES_WITH_FILM, batchArgs);
         }
 
+    }
+
+    @Override
+    public void deleteFilm(long filmId) {
+        jdbc.update(
+                DELETE_FILM,
+                filmId
+        );
     }
 }

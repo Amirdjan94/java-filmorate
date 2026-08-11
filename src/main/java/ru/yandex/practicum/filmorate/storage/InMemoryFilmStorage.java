@@ -96,4 +96,9 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .orElse(0);
         return ++currentMaxId;
     }
+
+    @Override
+    public void deleteFilm(long filmId) {
+        films.remove(filmId);
+    }
 }
