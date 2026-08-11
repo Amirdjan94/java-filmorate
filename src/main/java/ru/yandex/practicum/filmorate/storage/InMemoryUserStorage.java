@@ -120,5 +120,4 @@ public class InMemoryUserStorage implements UserStorage {
     public void deleteUser(long userId) {
         users.remove(userId);
     }
-
 }
