@@ -117,4 +117,10 @@ public class UserService {
             throw new ConditionsNotMetException("Не корректный ID - " + userId);
         }
     }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
+    }
 }
