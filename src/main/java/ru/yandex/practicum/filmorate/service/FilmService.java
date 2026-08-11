@@ -142,12 +142,10 @@ public class FilmService {
             throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
         }
     }
+
     public void deleteFilm(long filmId) {
-
         getFilmById(filmId);
-
         filmStorage.deleteFilm(filmId);
-
         log.info("Фильм с id={} удалён", filmId);
     }
 }
