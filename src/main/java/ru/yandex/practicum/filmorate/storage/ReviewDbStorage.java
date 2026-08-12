@@ -21,7 +21,7 @@ public class ReviewDbStorage extends BaseRepository<Review> implements ReviewSto
             " FROM reviews " +
             "WHERE review_id = ?";
     private static final String DELETE_REVIEW = "DELETE FROM reviews WHERE review_id = ?";
-    private static final String UPDATE_QUERY = "UPDATE reviews SET film_id = ?, user_id = ?, content = ?, " +
+    private static final String UPDATE_QUERY = "UPDATE reviews SET content = ?, " +
             "is_positive = ? WHERE review_id = ?";
     private static final String GET_ALL_REVIEW_BY_FILM_ID =
             "SELECT r.*, " +
@@ -29,6 +29,13 @@ public class ReviewDbStorage extends BaseRepository<Review> implements ReviewSto
                     "(SELECT COUNT(*) FROM reviews_dislikes WHERE review_id = r.review_id) AS useful " +
                     "FROM reviews r " +
                     "WHERE r.film_id = ? " +
+                    "ORDER BY useful DESC " +
+                    "LIMIT ?";
+    private static final String GET_ALL_REVIEW =
+            "SELECT r.*, " +
+                    "(SELECT COUNT(*) FROM reviews_likes WHERE review_id = r.review_id) - " +
+                    "(SELECT COUNT(*) FROM reviews_dislikes WHERE review_id = r.review_id) AS useful " +
+                    "FROM reviews r " +
                     "ORDER BY useful DESC " +
                     "LIMIT ?";
     private static final String INSERT_LIKE_FOR_REVIEW = "INSERT INTO reviews_likes(review_id, user_id) " +
@@ -63,8 +70,6 @@ public class ReviewDbStorage extends BaseRepository<Review> implements ReviewSto
     @Override
     public Review update(Review review, Review currentReview) {
         update(UPDATE_QUERY,
-                review.getFilmId(),
-                review.getUserId(),
                 review.getContent(),
                 review.isPositive(),
                 currentReview.getReviewId());
@@ -82,7 +87,10 @@ public class ReviewDbStorage extends BaseRepository<Review> implements ReviewSto
     }
 
     @Override
-    public Collection<Review> getAllReviewByFilmId(Long filmId, int count) {
+    public Collection<Review> getAllReviewByFilmId(Long filmId, Long count) {
+        if (filmId == null) {
+            return findMany(GET_ALL_REVIEW, count);
+        }
         return findMany(GET_ALL_REVIEW_BY_FILM_ID, filmId, count);
     }
 
