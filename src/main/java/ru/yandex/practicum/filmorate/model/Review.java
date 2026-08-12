@@ -20,7 +20,7 @@ public class Review {
     Long useful = 0L;
     @NotNull
     @JsonProperty("isPositive")
-    boolean isPositive;
+    Boolean isPositive;
 
     @JsonProperty("isPositive")
     public boolean isPositive() {
