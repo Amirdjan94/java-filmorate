@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,4 +21,15 @@ public class Review {
     @NotNull
     @JsonProperty("isPositive")
     boolean isPositive;
+
+    @JsonProperty("isPositive")
+    public boolean isPositive() {
+        return isPositive;
+    }
+
+    @JsonIgnore
+    public boolean getPositive() {
+        return isPositive;
+    }
+
 }
