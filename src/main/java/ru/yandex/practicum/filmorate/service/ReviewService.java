@@ -70,9 +70,11 @@ public class ReviewService {
         return reviewStorage.update(review, currentReview);
     }
 
-    public Collection<Review> getAllReviewByFilmId(Long filmId, int count) {
-        checkId(filmId);
-        filmDbStorage.getFilmById(filmId);
+    public Collection<Review> getAllReviewByFilmId(Long filmId, Long count) {
+        if (filmId != null) {
+            checkId(filmId);
+            filmDbStorage.getFilmById(filmId);
+        }
         return reviewStorage.getAllReviewByFilmId(filmId, count);
     }
 

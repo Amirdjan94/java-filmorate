@@ -15,7 +15,7 @@ public interface ReviewStorage {
 
     Optional<Review> getReviewById(Long reviewId);
 
-    Collection<Review> getAllReviewByFilmId(Long filmId, int count);
+    Collection<Review> getAllReviewByFilmId(Long filmId, Long count);
 
     boolean addLikeForReview(Long reviewId, Long userId);
 
