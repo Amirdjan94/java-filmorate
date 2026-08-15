@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
@@ -153,6 +154,40 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     @Override
     public boolean deleteLike(Film film, User user) {
         return delete(DELETE_LIKE, film.getId(), user.getId());
+    }
+
+    public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
+        String sql = "SELECT f.film_id, f.name, f.description, f.releaseDate, f.duration, " +
+                "f.ratingMpaId, rm.ratingMPAname " +
+                "FROM film f " +
+                "JOIN film_likes fl1 ON f.film_id = fl1.film_id " +
+                "JOIN film_likes fl2 ON f.film_id = fl2.film_id " +
+                "LEFT JOIN rating_mpa rm ON f.ratingMpaId = rm.ratingMpaId " +
+                "WHERE fl1.user_id = ? AND fl2.user_id = ? " +
+                "GROUP BY f.film_id, f.name, f.description, f.releaseDate, f.duration, f.ratingMpaId, rm.ratingMPAname " +
+                "ORDER BY COUNT(fl2.user_id) DESC";
+
+        List<Film> films = jdbc.query(sql, new FilmRowMapper(), userId, friendId);
+
+        if (films.isEmpty()) {
+            return films;
+        }
+
+        Map<Long, Set<Genres>> genresMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fg.film_id, g.genre_id, g.genre_name " +
+                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                        "WHERE fg.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
+                }
+        );
+
+        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        return films;
     }
 
     private Integer getLikesCount(Film film) {

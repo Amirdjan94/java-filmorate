@@ -99,6 +99,17 @@ public class FilmService {
         return filmStorage.getMostPopularFilms(count);
     }
 
+    public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
+        User user = userService.getUserById(userId);
+        User friend = userService.getUserById(friendId);
+
+        if (!user.getFriends().contains(friend)) {
+            throw new ConditionsNotMetException("Пользлватели не являются друзьями");
+        }
+
+        return filmStorage.getCommonUserFilms(userId, friendId);
+    }
+
     private void validateAndNormalizeFields(Film film) {
         releaseDateValidator(film);
         normalizeFields(film);
