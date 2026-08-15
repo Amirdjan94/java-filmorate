@@ -252,10 +252,10 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     continue; // пропускаем одинаковые фильмы
                 }
 
-                if (diff.containsKey(filmId) && diff.get(filmId).containsKey(targetFilmId)) {
+                if (diff.containsKey(targetFilmId) && diff.get(targetFilmId).containsKey(filmId)) {
                     // используем формулу predicted = diff[film][target] + rating[target]
-                    double predictedValue = diff.get(filmId).get(targetFilmId) + targetRating;
-                    int count = freq.get(filmId).get(targetFilmId);
+                    double predictedValue = diff.get(targetFilmId).get(filmId) + targetRating;
+                    int count = freq.get(targetFilmId).get(filmId);
 
                     predictions.put(filmId, predictions.getOrDefault(filmId, 0.0) + predictedValue * count);
                     predictionsFreq.put(filmId, predictionsFreq.getOrDefault(filmId, 0) + count);
