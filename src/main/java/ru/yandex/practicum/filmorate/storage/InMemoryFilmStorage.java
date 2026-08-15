@@ -80,7 +80,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     @Override
     public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
         Set<Film> commonFilms = new HashSet<>();
-        for(Film film : films.values()){
+        for (Film film : films.values()) {
             if (film.getLikes().contains(userId) && film.getLikes().contains(friendId)) {
                 commonFilms.add(film);
             }
