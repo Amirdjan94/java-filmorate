@@ -103,10 +103,6 @@ public class FilmService {
         User user = userService.getUserById(userId);
         User friend = userService.getUserById(friendId);
 
-        if (user.getFriends() == null || !user.getFriends().contains(friendId)) {
-            throw new ConditionsNotMetException("Пользлватели не являются друзьями");
-        }
-
         return filmStorage.getCommonUserFilms(userId, friendId);
     }
 
