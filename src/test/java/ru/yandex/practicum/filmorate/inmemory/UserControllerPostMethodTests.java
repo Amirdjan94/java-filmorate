@@ -22,7 +22,7 @@ class UserControllerPostMethodTests {
     void beforeEach() {
         inMemoryUserStorage = new InMemoryUserStorage();
         FilmStorage filmStorage = new InMemoryFilmStorage();
-        UserService userService = new UserService(inMemoryUserStorage, filmStorage);
+        userService = new UserService(inMemoryUserStorage, filmStorage);
         inMemoryUserStorage.clearStorage();
     }
 
