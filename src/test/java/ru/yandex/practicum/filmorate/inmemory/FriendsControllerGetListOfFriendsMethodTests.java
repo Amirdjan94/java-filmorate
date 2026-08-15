@@ -37,7 +37,7 @@ public class FriendsControllerGetListOfFriendsMethodTests {
     void beforeEach() {
         inMemoryUserStorage = new InMemoryUserStorage();
         FilmStorage filmStorage = new InMemoryFilmStorage();
-        UserService userService = new UserService(inMemoryUserStorage, filmStorage);
+        userService = new UserService(inMemoryUserStorage, filmStorage);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
         inMemoryUserStorage.create(userSecond);
