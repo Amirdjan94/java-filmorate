@@ -165,7 +165,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 "LEFT JOIN rating_mpa rm ON f.ratingMpaId = rm.ratingMpaId " +
                 "WHERE fl1.user_id = ? AND fl2.user_id = ? " +
                 "GROUP BY f.film_id, f.name, f.description, f.releaseDate, f.duration, f.ratingMpaId, rm.ratingMPAname " +
-                "ORDER BY COUNT(fl2.user_id) DESC";
+                "ORDER BY COUNT(*) DESC";
 
         List<Film> films = jdbc.query(sql, new FilmRowMapper(), userId, friendId);
 
