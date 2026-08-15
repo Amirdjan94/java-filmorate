@@ -78,112 +78,15 @@ public class InMemoryFilmStorage implements FilmStorage {
         return film.getLikes().remove(user.getId());
     }
 
-    @Override
+    Override
     public Collection<Film> getUserRecommendations(User targetUser, Collection<User> allUsers) {
-        log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId());
+        log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId() + " на основе пересечений лайков");
 
         if (films.values().isEmpty()) {
             throw new ObjectNotFoundException("Фильмы не найдены");
         }
 
-        // собираем данные для пользователя - (фильм -лайк)
-        Map<Long, Map<Long, Double>> userFilmRatings = new HashMap<>();
-        for (User user : allUsers) {
-            Map<Long, Double> filmRatings = new HashMap<>();
-            for (Film film : films.values()) {
-                Set<Long> filmLikes = film.getLikes();
-                if (filmLikes.contains(user.getId()) & filmLikes.contains(user.getId())) {
-                    filmRatings.put(film.getId(), 1.0);
-                } else  {
-                    filmRatings.put(film.getId(), 0.0);
-                }
-            }
-            userFilmRatings.put(user.getId(), filmRatings);
-        }
-
-        //строим матрицы различия и частоты
-        Map<Long, Map<Long, Double>> diff = new HashMap<>(); //различия
-        Map<Long, Map<Long, Integer>> freq = new HashMap<>(); //частота встречаемости
-
-        //теперь строим их для каждого пользователя
-        for (Map<Long, Double> ratings : userFilmRatings.values()) {
-            //теперь к каждому пользователю берем пары фильмов
-            for (Map.Entry<Long, Double> filmOne : ratings.entrySet()) {
-                //фильм первый
-                Long filmOneId = filmOne.getKey();
-                Double filmRatingOne = filmOne.getValue();
-
-                diff.putIfAbsent(filmOneId, new HashMap<>());
-                freq.putIfAbsent(filmOneId, new HashMap<>());
-
-                for (Map.Entry<Long, Double> filmTwo : ratings.entrySet()) {
-                    //фильм второй
-                    Long filmTwoId = filmTwo.getKey();
-                    Double filmRatingTwo = filmTwo.getValue();
-
-                    //вычисляем разницу
-                    double observedDiff = filmRatingOne - filmRatingTwo;
-
-                    //обновляем частоту
-                    int oldCount = freq.get(filmOneId).getOrDefault(filmTwoId, 0);
-                    freq.get(filmOneId).put(filmTwoId, oldCount + 1);
-
-                    //обновляем сумму разниц
-                    double oldDiff = diff.get(filmOneId).getOrDefault(filmTwoId, 0.0);
-                    diff.get(filmOneId).put(filmTwoId, observedDiff + oldDiff);
-                }
-            }
-        }
-
-        // усредняем значения
-        for (Long filmOneId : diff.keySet()) {
-            for (Long filmTwoId : diff.get(filmOneId).keySet()) {
-                double sumDiff = diff.get(filmOneId).get(filmTwoId);
-                int count = freq.get(filmOneId).get(filmTwoId);
-                diff.get(filmOneId).put(filmTwoId, sumDiff / count);
-            }
-        }
-
-        //делаем предсказания для целевого пользователя
-        Map<Long, Double> predictions = new HashMap<>();
-        Map<Long, Integer> predictionsFreq = new HashMap<>();
-
-        Map<Long, Double> targetUserRatings = userFilmRatings.get(targetUser.getId());
-
-        //обрабатываем каждый фильм который оценил пользователь
-        for (Map.Entry<Long, Double> targetEntry : targetUserRatings.entrySet()) {
-            Long targetFilmId = targetEntry.getKey();
-            Double targetRating = targetEntry.getValue();
-
-            //обработка для каждого фильма который мы хотим предсказать
-            for (Long filmId : films.keySet().stream().collect(Collectors.toList())) {
-                if (targetFilmId.equals(filmId)) {
-                    continue; // пропускаем одинаковые фильмы
-                }
-
-                if (diff.containsKey(filmId) && diff.get(filmId).containsKey(targetFilmId)) {
-
-                    //Используем формулу predicted = diff[film][target] + rating[target]
-                    double predictedValue = diff.get(filmId).get(targetFilmId) + targetRating;
-                    int count = freq.get(filmId).get(targetFilmId);
-
-                    predictions.put(filmId, predictions.getOrDefault(filmId,0.0) + predictedValue * count);
-                    predictionsFreq.put(filmId, predictionsFreq.getOrDefault(filmId,0) + count);
-                }
-            }
-        }
-
-        //усредняем предсказания
-        Map<Long, Double> finalPredictions = new HashMap<>();
-        for (Long filmId : predictions.keySet()) {
-            double sum = predictions.get(filmId);
-            int count = predictionsFreq.get(filmId);
-            if (count > 0) {
-                finalPredictions.put(filmId, sum / count);
-            }
-        }
-
-        //осталвяем только те фильмы которые пользователь не лайкнул и сортируем по убыванию
+        // получаем фильмы, которые лайкнул целевой пользователь
         Set<Long> targetUserLikedFilms = films.values().stream()
                 .filter(film -> {
                     Set<Long> filmLikes = film.getLikes();
@@ -192,16 +95,96 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .map(Film::getId)
                 .collect(Collectors.toSet());
 
-        List<Film> recommendations = finalPredictions.entrySet().stream()
-                .filter(entry -> !targetUserLikedFilms.contains(entry.getKey()))
-                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
+        if (targetUserLikedFilms.isEmpty()) {
+            log.info("У целевого пользователя нет лайков, рекомендации невозможны");
+            return Collections.emptyList();
+        }
+
+        // находим ВСЕХ пользователей с пересечением по лайкам
+        Map<User, Set<Long>> similarUsersWithNewFilms = new HashMap<>();
+        Map<User, Integer> userSimilarityScore = new HashMap<>();
+
+        for (User user : allUsers) {
+            if (user.getId().equals(targetUser.getId())) {
+                continue;
+            }
+
+            // Получаем фильмы, которые лайкнул этот пользователь
+            Set<Long> userLikedFilms = films.values().stream()
+                    .filter(film -> {
+                        Set<Long> filmLikes = film.getLikes();
+                        return filmLikes != null && filmLikes.contains(user.getId());
+                    })
+                    .map(Film::getId)
+                    .collect(Collectors.toSet());
+
+            if (userLikedFilms.isEmpty()) {
+                continue;
+            }
+
+            // вычисляем пересечение (количество общих лайков)
+            Set<Long> intersection = new HashSet<>(targetUserLikedFilms);
+            intersection.retainAll(userLikedFilms);
+            int commonCount = intersection.size();
+
+            // если есть общие лайки
+            if (commonCount > 0) {
+                // определяем фильмы, которые один пролайкал, а другой нет
+                Set<Long> newFilms = new HashSet<>(userLikedFilms);
+                newFilms.removeAll(targetUserLikedFilms); // фильмы, которые есть у user, но нет у target
+
+                if (!newFilms.isEmpty()) {
+                    similarUsersWithNewFilms.put(user, newFilms);
+                    userSimilarityScore.put(user, commonCount);
+                }
+            }
+        }
+
+        if (similarUsersWithNewFilms.isEmpty()) {
+            log.info("Не найдено пользователей с общими лайками");
+            return Collections.emptyList();
+        }
+
+        // сортируем ВСЕХ пользователей по максимальному пересечению
+        List<User> sortedUsers = similarUsersWithNewFilms.keySet().stream()
+                .sorted((u1, u2) -> Integer.compare(
+                        userSimilarityScore.getOrDefault(u2, 0),
+                        userSimilarityScore.getOrDefault(u1, 0)
+                ))
+                .collect(Collectors.toList());
+
+        // используем ВСЕХ пользователей, а не только топ-5
+        log.info("Найдено {} похожих пользователей", sortedUsers.size());
+
+        // Собираем рекомендуемые фильмы со ВСЕХ похожих пользователей
+        Map<Long, Integer> filmScore = new HashMap<>();
+        for (User user : sortedUsers) { // ← теперь ВСЕ пользователи
+            Set<Long> newFilms = similarUsersWithNewFilms.get(user);
+            for (Long filmId : newFilms) {
+                filmScore.put(filmId, filmScore.getOrDefault(filmId, 0) + 1);
+            }
+        }
+
+        // рекомендуем фильмы, которые поставили лайк пользователи с похожими вкусами
+        List<Film> recommendations = filmScore.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    // Сортируем по количеству пользователей, которые рекомендуют фильм
+                    int compare = Integer.compare(e2.getValue(), e1.getValue());
+                    if (compare == 0) {
+                        return Long.compare(e1.getKey(), e2.getKey());
+                    }
+                    return compare;
+                })
                 .map(entry -> getFilmById(entry.getKey()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        log.info("Найдено рекомендаций: " + recommendations.size());
+        log.info("Найдено рекомендаций: {} (из {} уникальных фильмов, рекомендованных {} похожими пользователями)",
+                recommendations.size(), filmScore.size(), sortedUsers.size());
+
         return recommendations;
     }
+
 
     public void clearStorage() {
         films.clear();
