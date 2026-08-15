@@ -91,7 +91,8 @@ public class InMemoryFilmStorage implements FilmStorage {
         for (User user : allUsers) {
             Map<Long, Double> filmRatings = new HashMap<>();
             for (Film film : films.values()) {
-                if (film.getLikes().contains(user.getId())) {
+                Set<Long> filmLikes = film.getLikes();
+                if (filmLikes.contains(user.getId()) & filmLikes.contains(user.getId())) {
                     filmRatings.put(film.getId(), 1.0);
                 } else  {
                     filmRatings.put(film.getId(), 0.0);
@@ -184,13 +185,16 @@ public class InMemoryFilmStorage implements FilmStorage {
 
         //осталвяем только те фильмы которые пользователь не лайкнул и сортируем по убыванию
         Set<Long> targetUserLikedFilms = films.values().stream()
-                .filter(film -> film.getLikes().contains(targetUser.getId()))
+                .filter(film -> {
+                    Set<Long> filmLikes = film.getLikes();
+                    return filmLikes != null && filmLikes.contains(targetUser.getId());
+                })
                 .map(Film::getId)
                 .collect(Collectors.toSet());
 
         List<Film> recommendations = finalPredictions.entrySet().stream()
                 .filter(entry -> !targetUserLikedFilms.contains(entry.getKey()))
-                .sorted((e1, e2) -> Double.compare(e1.getValue(), e2.getValue()))
+                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
                 .map(entry -> getFilmById(entry.getKey()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

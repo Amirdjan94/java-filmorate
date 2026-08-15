@@ -275,7 +275,11 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
         // оставляем только те фильмы, которые пользователь не лайкнул, и сортируем по убыванию
         Set<Long> targetUserLikedFilms = allFilms.stream()
-                .filter(film -> film.getLikes().contains(targetUser.getId()))
+                .filter(film -> {
+                    // безопасная проверка на null
+                    Set<Long> filmLikes = film.getLikes();
+                    return filmLikes != null && filmLikes.contains(targetUser.getId());
+                })
                 .map(Film::getId)
                 .collect(Collectors.toSet());
 
