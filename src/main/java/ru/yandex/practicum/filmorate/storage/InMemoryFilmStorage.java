@@ -78,7 +78,7 @@ public class InMemoryFilmStorage implements FilmStorage {
         return film.getLikes().remove(user.getId());
     }
 
-    Override
+    @Override
     public Collection<Film> getUserRecommendations(User targetUser, Collection<User> allUsers) {
         log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId() + " на основе пересечений лайков");
 
