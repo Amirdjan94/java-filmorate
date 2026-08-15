@@ -153,12 +153,12 @@ public class InMemoryFilmStorage implements FilmStorage {
                 ))
                 .collect(Collectors.toList());
 
-        // используем ВСЕХ пользователей, а не только топ-5
+        // используем ВСЕХ пользователей
         log.info("Найдено {} похожих пользователей", sortedUsers.size());
 
         // Собираем рекомендуемые фильмы со ВСЕХ похожих пользователей
         Map<Long, Integer> filmScore = new HashMap<>();
-        for (User user : sortedUsers) { // ← теперь ВСЕ пользователи
+        for (User user : sortedUsers) {
             Set<Long> newFilms = similarUsersWithNewFilms.get(user);
             for (Long filmId : newFilms) {
                 filmScore.put(filmId, filmScore.getOrDefault(filmId, 0) + 1);
