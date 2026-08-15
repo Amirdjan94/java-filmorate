@@ -279,7 +279,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
         List<Film> recommendations = finalPredictions.entrySet().stream()
                 .filter(entry -> !targetUserLikes.contains(entry.getKey()))
-                .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue())) // по убыванию
+                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
                 .map(entry -> getFilmById(entry.getKey()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
