@@ -179,6 +179,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 }
         );
 
+        Set<Long> targetUserLikes = userLikesMap.getOrDefault(targetUser.getId(), new HashSet<>());
+
         // строим карту рейтингов: пользователь -> (фильм -> лайк)
         Map<Long, Map<Long, Double>> userFilmRatings = new HashMap<>();
         for (User user : allUsers) {
@@ -274,17 +276,9 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         }
 
         // оставляем только те фильмы, которые пользователь не лайкнул, и сортируем по убыванию
-        Set<Long> targetUserLikedFilms = allFilms.stream()
-                .filter(film -> {
-                    // безопасная проверка на null
-                    Set<Long> filmLikes = film.getLikes();
-                    return filmLikes != null && filmLikes.contains(targetUser.getId());
-                })
-                .map(Film::getId)
-                .collect(Collectors.toSet());
 
         List<Film> recommendations = finalPredictions.entrySet().stream()
-                .filter(entry -> !targetUserLikedFilms.contains(entry.getKey()))
+                .filter(entry -> !targetUserLikes.contains(entry.getKey()))
                 .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue())) // по убыванию
                 .map(entry -> getFilmById(entry.getKey()).orElse(null))
                 .filter(Objects::nonNull)
