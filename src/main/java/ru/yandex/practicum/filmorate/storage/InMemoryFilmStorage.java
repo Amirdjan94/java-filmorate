@@ -139,7 +139,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             for (Long filmTwoId : diff.get(filmOneId).keySet()) {
                 double sumDiff = diff.get(filmOneId).get(filmTwoId);
                 int count = freq.get(filmOneId).get(filmTwoId);
-                diff.get(filmOneId).put(filmTwoId, sumDiff/count);
+                diff.get(filmOneId).put(filmTwoId, sumDiff / count);
             }
         }
 
@@ -160,7 +160,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                     continue; // пропускаем одинаковые фильмы
                 }
 
-                if(diff.containsKey(filmId) && diff.get(filmId).containsKey(targetFilmId)) {
+                if (diff.containsKey(filmId) && diff.get(filmId).containsKey(targetFilmId)) {
 
                     //Используем формулу predicted = diff[film][target] + rating[target]
                     double predictedValue = diff.get(filmId).get(targetFilmId) + targetRating;
