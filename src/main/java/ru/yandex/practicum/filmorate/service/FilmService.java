@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
@@ -24,14 +25,17 @@ public class FilmService {
     private final MpaStorage mpaStorage;
     private final GenresService genresService;
     private final UserService userService;
+    private final DirectorService directorService;
 
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
                        @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                       @Qualifier("directorService") DirectorService directorService,
                        @Qualifier("genresService") GenresService genresService) {
         this.filmStorage = filmStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
         this.genresService = genresService;
+        this.directorService = directorService;
     }
 
     public Collection<Film> getFilms() {
@@ -42,6 +46,7 @@ public class FilmService {
         validateAndNormalizeFields(film);
         checkMpa(film);
         checkGenres(film);
+        checkDirectors(film);
         return filmStorage.create(film);
     }
 
@@ -53,6 +58,7 @@ public class FilmService {
         normalizeFields(film);
         checkMpa(film);
         checkGenres(film);
+        checkDirectors(film);
         Film currentFilm = getFilmById(film.getId());
         return filmStorage.update(film, currentFilm);
     }
@@ -140,6 +146,22 @@ public class FilmService {
     private void checkMpa(Film film) {
         if (film.getMpa() == null || mpaStorage.getMpaById(film.getMpa().getId()).isEmpty()) {
             throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
+        }
+    }
+
+    public Collection<Film> getByDirector(Long directorId, String sortBy) {
+        directorService.findById(directorId);
+        return filmStorage.getByDirector(directorId, sortBy);
+    }
+
+    private void checkDirectors(Film film) {
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            for (Director director : film.getDirectors()) {
+                if (director.getId() == null) {
+                    throw new ConditionsNotMetException("ID режиссёра не может быть null");
+                }
+                directorService.findById(director.getId());
+            }
         }
     }
 }
