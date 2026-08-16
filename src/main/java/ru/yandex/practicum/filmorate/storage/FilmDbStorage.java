@@ -167,7 +167,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 "GROUP BY f.film_id, f.name, f.description, f.releaseDate, f.duration, f.ratingMpaId, rm.ratingMPAname " +
                 "ORDER BY COUNT(*) DESC";
 
-        List<Film> films = jdbc.query(sql, new FilmRowMapper(), userId, friendId);
+        List<Film> films = findMany(sql, userId, friendId);
 
         if (films.isEmpty()) {
             return films;

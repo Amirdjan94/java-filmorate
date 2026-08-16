@@ -100,8 +100,8 @@ public class FilmService {
     }
 
     public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
-        User user = userService.getUserById(userId);
-        User friend = userService.getUserById(friendId);
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
 
         return filmStorage.getCommonUserFilms(userId, friendId);
     }
