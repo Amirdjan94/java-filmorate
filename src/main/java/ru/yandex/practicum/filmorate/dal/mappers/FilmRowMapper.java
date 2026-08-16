@@ -26,21 +26,6 @@ public class FilmRowMapper implements RowMapper<Film> {
             mpa.setName(mpaName);
             film.setMpa(mpa);
         }
-//        int [] genresIds = rs.getArray("")
-////        = rs.getString()
         return film;
     }
-
-
-
-//    // Получаем имя рейтинга (mpa_name - алиас из запроса)
-//    String mpaName = rs.getString("mpa_name");
-//        if (mpaName != null) {
-//        mpa.setName(mpaName);
-//    }
-//
-//        film.setMpa(mpa);
-//
-//    private static final String FIND_FILM_BY_ID = "SELECT * FROM film " +
-//            "JOIN rating_mpa ON film.ratingMpaId = rating_mpa.ratingMpaId WHERE film.film_id = ?";
 }
