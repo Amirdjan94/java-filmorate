@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
@@ -17,6 +20,8 @@ import java.util.Optional;
 public class UserService {
 
     private final UserStorage userStorage;
+    @Autowired
+    private FeedService feedService;
 
     public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
         this.userStorage = inMemoryUserStorage;
@@ -30,6 +35,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.ADD);
         return Map.of(
                 "status", "success",
                 "operation", "Add new friend"
@@ -43,6 +49,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.REMOVE);
         return Map.of(
                 "status", "success",
                 "operation", "Delete friend"

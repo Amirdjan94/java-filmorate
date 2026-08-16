@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS reviews (
   user_id INTEGER,
   content VARCHAR,
   is_positive BOOLEAN,
---  CONSTRAINT unique_review UNIQUE (film_id, user_id),
   FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
@@ -71,4 +70,14 @@ CREATE TABLE IF NOT EXISTS reviews_dislikes (
   review_id INTEGER,
   user_id INTEGER,
   FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS feed (
+  event_id INTEGER AUTO_INCREMENT PRIMARY KEY,
+  event_timestamp BIGINT,
+  user_id INTEGER,
+  event_type VARCHAR,
+  operation VARCHAR,
+  entity_id INTEGER,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
