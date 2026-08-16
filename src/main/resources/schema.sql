@@ -62,4 +62,25 @@ CREATE TABLE IF NOT EXISTS film_directors (
     CONSTRAINT unique_film_directors UNIQUE (film_id, director_id),
     FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
     FOREIGN KEY (director_id) REFERENCES directors(director_id) ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS reviews (
+  review_id INTEGER AUTO_INCREMENT PRIMARY KEY,
+  film_id INTEGER,
+  user_id INTEGER,
+  content VARCHAR,
+  is_positive BOOLEAN,
+--  CONSTRAINT unique_review UNIQUE (film_id, user_id),
+  FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reviews_likes (
+  review_id INTEGER,
+  user_id INTEGER,
+  FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS reviews_dislikes (
+  review_id INTEGER,
+  user_id INTEGER,
+  FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE
 );
