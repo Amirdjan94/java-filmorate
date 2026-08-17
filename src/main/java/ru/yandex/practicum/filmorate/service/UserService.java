@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -17,9 +19,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage, @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
         this.userStorage = inMemoryUserStorage;
+        this.filmStorage = inMemoryFilmStorage;
     }
 
 
@@ -30,10 +34,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
-        return Map.of(
-                "status", "success",
-                "operation", "Add new friend"
-        );
+        return Map.of("status", "success", "operation", "Add new friend");
     }
 
     public Map<String, String> deleteFriend(Long userId, Long friendId) { // удаление из друзей
@@ -43,10 +44,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
-        return Map.of(
-                "status", "success",
-                "operation", "Delete friend"
-        );
+        return Map.of("status", "success", "operation", "Delete friend");
     }
 
     public Collection<User> getListOfFriends(Long userId) { // список пользователей, являющихся его друзьями
@@ -94,6 +92,11 @@ public class UserService {
         return user.get();
     }
 
+    public Collection<Film> getUserRecommendations(Long userId) {
+        User user = getUserById(userId);
+        return filmStorage.getUserRecommendations(user, getUsers());
+    }
+
     private void checkDuplicateId(Long firstId, Long secondId) {
         if (firstId == secondId) {
             throw new ConditionsNotMetException("Указан один и тот же пользователь");
@@ -116,5 +119,11 @@ public class UserService {
         if (userId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + userId);
         }
+    }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
     }
 }
