@@ -1,7 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.data.EventOperation;
@@ -22,13 +21,15 @@ import java.util.Optional;
 public class UserService {
 
     private final UserStorage userStorage;
-    @Autowired
     private FeedService feedService;
     private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage, @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage,
+                       @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage,
+                       FeedService feedService) {
         this.userStorage = inMemoryUserStorage;
         this.filmStorage = inMemoryFilmStorage;
+        this.feedService = feedService;
     }
 
 
