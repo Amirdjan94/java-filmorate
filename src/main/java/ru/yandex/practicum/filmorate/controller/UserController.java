@@ -35,10 +35,14 @@ public class UserController {
         return userService.update(user);
     }
 
-    @GetMapping("/{id}/recommendations")
-    public Collection<Film> getUserRecommendations(@PathVariable("id")  Long userId) {
-        return userService.getUserRecommendations(userId);
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
     }
 
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getUserRecommendations(@PathVariable("id") Long userId) {
+        return userService.getUserRecommendations(userId);
+    }
 }
 
