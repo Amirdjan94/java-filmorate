@@ -106,6 +106,13 @@ public class FilmService {
         return filmStorage.getMostPopularFilms(count);
     }
 
+    public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        return filmStorage.getCommonUserFilms(userId, friendId);
+    }
+
     private void validateAndNormalizeFields(Film film) {
         releaseDateValidator(film);
         normalizeFields(film);

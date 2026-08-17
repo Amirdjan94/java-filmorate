@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -17,9 +19,12 @@ import java.util.Optional;
 public class UserService {
 
     private final UserStorage userStorage;
+    private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage,
+                       @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
         this.userStorage = inMemoryUserStorage;
+        this.filmStorage = inMemoryFilmStorage;
     }
 
 
@@ -92,6 +97,11 @@ public class UserService {
             throw new ObjectNotFoundException("Пользователь с id=" + id + " не найден");
         }
         return user.get();
+    }
+
+    public Collection<Film> getUserRecommendations(Long userId) {
+        User user = getUserById(userId);
+        return filmStorage.getUserRecommendations(user, getUsers());
     }
 
     private void checkDuplicateId(Long firstId, Long secondId) {
