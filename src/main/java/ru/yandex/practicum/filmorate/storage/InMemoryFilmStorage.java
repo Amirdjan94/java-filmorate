@@ -201,6 +201,11 @@ public class InMemoryFilmStorage implements FilmStorage {
         return List.of();
     }
 
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        return List.of();
+    }
+
     public void clearStorage() {
         films.clear();
     }

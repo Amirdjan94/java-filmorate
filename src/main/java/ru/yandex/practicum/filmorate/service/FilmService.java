@@ -33,7 +33,10 @@ public class FilmService {
     private FeedService feedService;
     private final DirectorService directorService;
 
-    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService, @Qualifier("mpaDbStorage") MpaStorage mpaStorage, @Qualifier("directorService") DirectorService directorService, @Qualifier("genresService") GenresService genresService) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
+                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                       @Qualifier("directorService") DirectorService directorService,
+                       @Qualifier("genresService") GenresService genresService) {
         this.filmStorage = filmStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
@@ -178,6 +181,26 @@ public class FilmService {
                 directorService.findById(director.getId());
             }
         }
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+        // Нормализация
+        query = query.trim();
+        by = by.trim().replaceAll("\\s+", "");
+
+        if (query.isBlank()) {
+            throw new ConditionsNotMetException("Query не может быть пустым");
+        }
+        if (by.isBlank()) {
+            throw new ConditionsNotMetException("By не может быть пустым");
+        }
+
+        String byLower = by.toLowerCase();
+        if (!byLower.contains("title") && !byLower.contains("director")) {
+            throw new ConditionsNotMetException("By должен содержать 'title' и/или 'director'");
+        }
+
+        return filmStorage.searchFilms(query, by);
     }
 
     public void deleteFilm(long filmId) {
