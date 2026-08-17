@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -26,6 +29,8 @@ public class FilmService {
     private final MpaStorage mpaStorage;
     private final GenresService genresService;
     private final UserService userService;
+    @Autowired
+    private FeedService feedService;
     private final DirectorService directorService;
 
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService, @Qualifier("mpaDbStorage") MpaStorage mpaStorage, @Qualifier("directorService") DirectorService directorService, @Qualifier("genresService") GenresService genresService) {
@@ -76,7 +81,10 @@ public class FilmService {
         Film film = getFilmById(filmId);
         filmStorage.addLike(film, user);
         log.info("Лайк успешно добавлен");
-        return Map.of("operation", "Add new like");
+        feedService.addFeed(filmId, userId, EventType.LIKE, EventOperation.ADD);
+        return Map.of(
+                "operation", "Add new like"
+        );
     }
 
     public Map<String, String> deleteLike(Long filmId, Long userId) { // удаление лайка
@@ -84,7 +92,11 @@ public class FilmService {
         User user = userService.getUserById(userId); // Если пользоваеля нет по указанному ID или не валидный ID, будет выброшен exception
         Film film = getFilmById(filmId);
         if (filmStorage.deleteLike(film, user)) {
-            return Map.of("status", "success", "operation", "Delete like");
+            feedService.addFeed(filmId, userId, EventType.LIKE, EventOperation.REMOVE);
+            return Map.of(
+                    "status", "success",
+                    "operation", "Delete like"
+            );
         } else {
             throw new ConditionsNotMetException("Film don't have like for this user");
         }

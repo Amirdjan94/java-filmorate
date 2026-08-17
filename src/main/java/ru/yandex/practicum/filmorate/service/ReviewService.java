@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -27,13 +29,17 @@ public class ReviewService {
     private FilmDbStorage filmDbStorage;
     @Autowired
     private UserDbStorage userDbStorage;
+    @Autowired
+    private FeedService feedService;
 
 
     public Review create(Review review) {
         normalizeFields(review);
         checkUserId(review);
         checkFilmId(review);
-        return reviewStorage.create(review);
+        Review adderReview = reviewStorage.create(review);
+        feedService.addFeed(adderReview.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.ADD);
+        return adderReview;
     }
 
     public Review getReviewById(Long id) {
@@ -46,8 +52,9 @@ public class ReviewService {
     }
 
     public Map<String, String> delete(Long id) {
-        getReviewById(id); // Если нет отзыва по указонному ид, упадет ошибка
+        Review review = getReviewById(id); // Если нет отзыва по указонному ид, упадет ошибка
         if (reviewStorage.delete(id)) {
+            feedService.addFeed(review.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.REMOVE);
             return Map.of(
                     "status", "success",
                     "operation", "Delete review"
@@ -67,6 +74,7 @@ public class ReviewService {
         checkUserId(review);
         checkFilmId(review);
         Review currentReview = getReviewById(review.getReviewId());
+        feedService.addFeed(review.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.UPDATE);
         return reviewStorage.update(review, currentReview);
     }
 
