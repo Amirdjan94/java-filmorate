@@ -35,7 +35,7 @@ public class FilmDbGetFilmsMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
-                .mpa(new Mpa(1L, "тест"))
+                .mpa(new Mpa(1L, "G"))
                 .build()
         );
         Collection<Film> filmCollection = filmStorage.getFilms();
