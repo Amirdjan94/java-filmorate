@@ -89,6 +89,10 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
                 .collect(Collectors.toList());
     }
+      
+    public Collection<Film> getByDirector(Long id, String sortBy) {
+        return List.of();
+    }
 
     public void clearStorage() {
         films.clear();
@@ -108,5 +112,25 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
+    }
+
+    @Override
+    public List<Film> getPopular(int count,
+                                 Integer genreId,
+                                 Integer year) {
+
+        return films.values().stream()
+                .filter(film -> genreId == null ||
+                        film.getGenres().stream()
+                                .anyMatch(g -> g.getId().equals(Long.valueOf(genreId))))
+                .filter(film -> year == null ||
+                        film.getReleaseDate().getYear() == year)
+                .sorted((f1, f2) ->
+                        Integer.compare(
+                                f2.getLikes().size(),
+                                f1.getLikes().size()
+                        ))
+                .limit(count)
+                .toList();
     }
 }
