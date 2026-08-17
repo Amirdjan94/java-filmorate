@@ -154,6 +154,8 @@ public class FilmService {
                                  Integer genreId,
                                  Integer year) {
         return filmStorage.getPopular(count, genreId, year);
+    }
+
     public Collection<Film> getByDirector(Long directorId, String sortBy) {
         directorService.findById(directorId);
         return filmStorage.getByDirector(directorId, sortBy);

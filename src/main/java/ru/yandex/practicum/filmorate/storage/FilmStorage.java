@@ -23,5 +23,6 @@ public interface FilmStorage {
     boolean deleteLike(Film film, User user);
 
     List<Film> getPopular(int count, Integer genreId, Integer year);
+
     Collection<Film> getByDirector(Long id, String sortBy);
 }
