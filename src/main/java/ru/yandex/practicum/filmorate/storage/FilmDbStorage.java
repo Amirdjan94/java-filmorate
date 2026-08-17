@@ -236,6 +236,40 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return delete(DELETE_LIKE, film.getId(), user.getId());
     }
 
+    public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
+        String sql = "SELECT f.film_id, f.name, f.description, f.releaseDate, f.duration, " +
+                "f.ratingMpaId, rm.ratingMPAname " +
+                "FROM film f " +
+                "JOIN film_likes fl1 ON f.film_id = fl1.film_id " +
+                "JOIN film_likes fl2 ON f.film_id = fl2.film_id " +
+                "LEFT JOIN rating_mpa rm ON f.ratingMpaId = rm.ratingMpaId " +
+                "WHERE fl1.user_id = ? AND fl2.user_id = ? " +
+                "GROUP BY f.film_id, f.name, f.description, f.releaseDate, f.duration, f.ratingMpaId, rm.ratingMPAname " +
+                "ORDER BY COUNT(*) DESC";
+
+        List<Film> films = findMany(sql, userId, friendId);
+
+        if (films.isEmpty()) {
+            return films;
+        }
+
+        Map<Long, Set<Genres>> genresMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fg.film_id, g.genre_id, g.genre_name " +
+                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                        "WHERE fg.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
+                }
+        );
+
+        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        return films;
+    }
+
     private Integer getLikesCount(Film film) {
         return jdbc.queryForObject(GET_LIKES_COUNT, Integer.class, film.getId());
     }
