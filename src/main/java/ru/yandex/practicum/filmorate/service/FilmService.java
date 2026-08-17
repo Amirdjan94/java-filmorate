@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -163,5 +164,25 @@ public class FilmService {
                 directorService.findById(director.getId());
             }
         }
+    }
+
+    public List<Film> searchFilms(String query, String by) {
+        // Нормализация
+        query = query.trim();
+        by = by.trim().replaceAll("\\s+", "");
+
+        if (query.isBlank()) {
+            throw new ConditionsNotMetException("Query не может быть пустым");
+        }
+        if (by.isBlank()) {
+            throw new ConditionsNotMetException("By не может быть пустым");
+        }
+
+        String byLower = by.toLowerCase();
+        if (!byLower.contains("title") && !byLower.contains("director")) {
+            throw new ConditionsNotMetException("By должен содержать 'title' и/или 'director'");
+        }
+
+        return filmStorage.searchFilms(query, by);
     }
 }
