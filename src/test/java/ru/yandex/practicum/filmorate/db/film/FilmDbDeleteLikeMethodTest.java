@@ -38,7 +38,7 @@ public class FilmDbDeleteLikeMethodTest {
                 .description("Good new film")
                 .releaseDate(LocalDate.of(1994, 07, 22))
                 .duration(100)
-                .mpa(new Mpa())
+                .mpa(new Mpa(1L, "G"))
                 .build()
         );
         newUser = userStorage.create(
