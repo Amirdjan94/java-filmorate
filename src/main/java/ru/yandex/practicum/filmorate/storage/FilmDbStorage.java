@@ -440,6 +440,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                 filmId
         );
     }
+
     private void insertDirectorsWithFilm(Film film) {
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
             List<Object[]> batchArgs = new ArrayList<>();
