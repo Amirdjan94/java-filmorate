@@ -10,14 +10,13 @@ import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
 
@@ -145,16 +144,25 @@ public class FilmService {
     }
 
     private void checkFilmsId(Long filmId) {
-        if (filmId <= 0L) {
+        if (filmId == null || filmId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + filmId);
         }
     }
 
     private void checkGenres(Film film) {
-        if (film.getGenres() != null) {
-            if (genresService.getGenresListById(film.getGenres()).size() != film.getGenres().size()) {
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Genres> fullGenres = genresService.getGenresListById(film.getGenres());
+            if (fullGenres.size() != film.getGenres().size()) {
                 throw new ObjectNotFoundException("Передан не существующий жанр");
             }
+
+            Map<Long, Genres> genresMap = fullGenres.stream()
+                    .collect(Collectors.toMap(Genres::getId, g -> g));
+            Set<Genres> updatedGenres = film.getGenres().stream()
+                    .map(g -> genresMap.get(g.getId()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            film.setGenres(updatedGenres);
         }
     }
 
