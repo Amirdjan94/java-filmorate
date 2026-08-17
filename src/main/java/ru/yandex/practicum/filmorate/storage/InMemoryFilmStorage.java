@@ -89,7 +89,7 @@ public class InMemoryFilmStorage implements FilmStorage {
                 .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
                 .collect(Collectors.toList());
     }
-      
+
     public Collection<Film> getByDirector(Long id, String sortBy) {
         return List.of();
     }
