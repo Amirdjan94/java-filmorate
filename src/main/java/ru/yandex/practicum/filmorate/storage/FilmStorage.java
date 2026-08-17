@@ -22,6 +22,8 @@ public interface FilmStorage {
 
     boolean deleteLike(Film film, User user);
 
+    Collection<Film> getUserRecommendations(User user, Collection<User> users);
+
     Collection<Film> getCommonUserFilms(Long userId, Long friendId);
 
     List<Film> getPopular(int count, Integer genreId, Integer year);

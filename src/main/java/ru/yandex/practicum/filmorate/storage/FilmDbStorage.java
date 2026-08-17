@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -236,6 +237,95 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return delete(DELETE_LIKE, film.getId(), user.getId());
     }
 
+    @Override
+    public Collection<Film> getUserRecommendations(User targetUser, Collection<User> allUsers) {
+        log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId() + " на основе пересечений лайков");
+
+        if (getFilms().isEmpty()) {
+            throw new ObjectNotFoundException("Фильмы не найдены");
+        }
+
+        // получаем все лайки из БД одним запросом
+        Map<Long, Set<Long>> userLikesMap = loadAllUserLikes();
+
+        // получаем лайки целевого пользователя
+        Set<Long> targetUserLikes = userLikesMap.getOrDefault(targetUser.getId(), new HashSet<>());
+
+        if (targetUserLikes.isEmpty()) {
+            log.info("У целевого пользователя нет лайков, рекомендации невозможны");
+            return Collections.emptyList();
+        }
+
+        // находим пользователей с максимальным пересечением по лайкам
+        List<UserSimilarity> similarities = new ArrayList<>();
+
+        for (User user : allUsers) {
+            if (user.getId().equals(targetUser.getId())) {
+                continue; // пропускаем самого себя
+            }
+
+            Set<Long> userLikes = userLikesMap.getOrDefault(user.getId(), new HashSet<>());
+
+            // вычисляем пересечение (количество общих лайков)
+            Set<Long> intersection = new HashSet<>(targetUserLikes);
+            intersection.retainAll(userLikes);
+
+            int commonCount = intersection.size();
+
+            // если есть хотя бы 1 общий лайк - добавляем в список
+            if (commonCount > 0) {
+                // Вычисляем фильмы, которые лайкнул этот пользователь, но не лайкнул целевой
+                Set<Long> newFilms = new HashSet<>(userLikes);
+                newFilms.removeAll(targetUserLikes);
+
+                similarities.add(new UserSimilarity(user, commonCount, newFilms));
+            }
+        }
+
+        // сортируем по количеству общих лайков (по убыванию)
+        similarities.sort((a, b) -> Integer.compare(b.commonCount, a.commonCount));
+
+        if (similarities.isEmpty()) {
+            log.info("Не найдено пользователей с общими лайками");
+            return Collections.emptyList();
+        }
+
+        // выбираем топ-5 похожих пользователей (или всех, если их меньше)
+        int topN = Math.min(5, similarities.size());
+        List<UserSimilarity> topUsers = similarities.subList(0, topN);
+
+        log.info("Найдено {} похожих пользователей, берем топ-{}", similarities.size(), topN);
+
+        // собираем рекомендуемые фильмы с весом (количество похожих пользователей, которые его лайкнули)
+        Map<Long, Integer> filmScore = new HashMap<>();
+        Map<Long, Set<Long>> filmFromUsers = new HashMap<>(); // для отладки
+
+        for (UserSimilarity similarUser : topUsers) {
+            for (Long filmId : similarUser.newFilms) {
+                filmScore.put(filmId, filmScore.getOrDefault(filmId, 0) + 1);
+                filmFromUsers.computeIfAbsent(filmId, k -> new HashSet<>()).add(similarUser.user.getId());
+            }
+        }
+
+        // сортируем фильмы по весу (количеству похожих пользователей) и ID
+        List<Film> recommendations = filmScore.entrySet().stream()
+                .sorted((e1, e2) -> {
+                    int compare = Integer.compare(e2.getValue(), e1.getValue()); // по убыванию веса
+                    if (compare == 0) {
+                        return Long.compare(e1.getKey(), e2.getKey()); // по ID
+                    }
+                    return compare;
+                })
+                .map(entry -> getFilmById(entry.getKey()).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        log.info("Найдено рекомендаций: {} (из {} уникальных фильмов)",
+                recommendations.size(), filmScore.size());
+
+        return recommendations;
+    }
+
     public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
         String sql = "SELECT f.film_id, f.name, f.description, f.releaseDate, f.duration, " +
                 "f.ratingMpaId, rm.ratingMPAname " +
@@ -395,5 +485,30 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         });
 
         return films;
+    }
+
+    private Map<Long, Set<Long>> loadAllUserLikes() {
+        String sql = "SELECT user_id, film_id FROM film_likes";
+        Map<Long, Set<Long>> userLikesMap = new HashMap<>();
+
+        jdbc.query(sql, (rs) -> {
+            Long userId = rs.getLong("user_id");
+            Long filmId = rs.getLong("film_id");
+            userLikesMap.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
+        });
+
+        return userLikesMap;
+    }
+
+    private static class UserSimilarity {
+        private final User user;
+        private final int commonCount;
+        private final Set<Long> newFilms; // фильмы, которые есть у user, но нет у target
+
+        public UserSimilarity(User user, int commonCount, Set<Long> newFilms) {
+            this.user = user;
+            this.commonCount = commonCount;
+            this.newFilms = newFilms;
+        }
     }
 }
