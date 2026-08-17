@@ -21,4 +21,6 @@ public interface UserStorage {
     Collection<User> getListOfFriends(User user);
 
     Collection<User> getListOfCommonFriends(User firstUser, User secondUser);
+
+    void deleteUser(long userId);
 }

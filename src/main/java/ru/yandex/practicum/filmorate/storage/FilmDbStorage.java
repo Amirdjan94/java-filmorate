@@ -64,6 +64,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     private static final String FIND_DIRECTORS_BY_FILM_ID = "SELECT d.director_id, d.name, d.lastname FROM directors d " +
             "JOIN film_directors fd ON d.director_id = fd.director_id " +
             "WHERE fd.film_id = ?";
+    private static final String DELETE_FILM = "DELETE FROM film WHERE film_id = ?";
 
     public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper);
@@ -430,6 +431,14 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return findMany(
                 sql.toString(),
                 params.toArray());
+    }
+
+    @Override
+    public void deleteFilm(long filmId) {
+        jdbc.update(
+                DELETE_FILM,
+                filmId
+        );
     }
 
     private void insertDirectorsWithFilm(Film film) {

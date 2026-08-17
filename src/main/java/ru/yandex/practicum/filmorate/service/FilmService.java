@@ -28,10 +28,7 @@ public class FilmService {
     private final UserService userService;
     private final DirectorService directorService;
 
-    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
-                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
-                       @Qualifier("directorService") DirectorService directorService,
-                       @Qualifier("genresService") GenresService genresService) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService, @Qualifier("mpaDbStorage") MpaStorage mpaStorage, @Qualifier("directorService") DirectorService directorService, @Qualifier("genresService") GenresService genresService) {
         this.filmStorage = filmStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
@@ -79,9 +76,7 @@ public class FilmService {
         Film film = getFilmById(filmId);
         filmStorage.addLike(film, user);
         log.info("Лайк успешно добавлен");
-        return Map.of(
-                "operation", "Add new like"
-        );
+        return Map.of("operation", "Add new like");
     }
 
     public Map<String, String> deleteLike(Long filmId, Long userId) { // удаление лайка
@@ -89,10 +84,7 @@ public class FilmService {
         User user = userService.getUserById(userId); // Если пользоваеля нет по указанному ID или не валидный ID, будет выброшен exception
         Film film = getFilmById(filmId);
         if (filmStorage.deleteLike(film, user)) {
-            return Map.of(
-                    "status", "success",
-                    "operation", "Delete like"
-            );
+            return Map.of("status", "success", "operation", "Delete like");
         } else {
             throw new ConditionsNotMetException("Film don't have like for this user");
         }
@@ -131,8 +123,7 @@ public class FilmService {
         log.debug("Ввалидация поля releaseDate");
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(FIRST_FILM_RELEASE_DATE)) {
             log.warn("Дата релиза " + film.getReleaseDate());
-            throw new ConditionsNotMetException("Дата релиза — не раньше "
-                    + FIRST_FILM_RELEASE_DATE);
+            throw new ConditionsNotMetException("Дата релиза — не раньше " + FIRST_FILM_RELEASE_DATE);
         }
         log.debug("Поле releaseDate валиден");
     }
@@ -157,9 +148,7 @@ public class FilmService {
         }
     }
 
-    public List<Film> getPopular(int count,
-                                 Integer genreId,
-                                 Integer year) {
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
         return filmStorage.getPopular(count, genreId, year);
     }
 
@@ -177,5 +166,11 @@ public class FilmService {
                 directorService.findById(director.getId());
             }
         }
+    }
+
+    public void deleteFilm(long filmId) {
+        getFilmById(filmId);
+        filmStorage.deleteFilm(filmId);
+        log.info("Фильм с id={} удалён", filmId);
     }
 }

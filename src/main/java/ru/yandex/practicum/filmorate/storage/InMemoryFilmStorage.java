@@ -222,6 +222,11 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
+    public void deleteFilm(long filmId) {
+        films.remove(filmId);
+    }
+
+    @Override
     public List<Film> getPopular(int count,
                                  Integer genreId,
                                  Integer year) {

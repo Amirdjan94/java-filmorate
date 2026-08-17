@@ -21,8 +21,7 @@ public class UserService {
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage,
-                       @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage, @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
         this.userStorage = inMemoryUserStorage;
         this.filmStorage = inMemoryFilmStorage;
     }
@@ -35,10 +34,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
-        return Map.of(
-                "status", "success",
-                "operation", "Add new friend"
-        );
+        return Map.of("status", "success", "operation", "Add new friend");
     }
 
     public Map<String, String> deleteFriend(Long userId, Long friendId) { // удаление из друзей
@@ -48,10 +44,7 @@ public class UserService {
         log.debug("Корректные входные данные");
         userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
-        return Map.of(
-                "status", "success",
-                "operation", "Delete friend"
-        );
+        return Map.of("status", "success", "operation", "Delete friend");
     }
 
     public Collection<User> getListOfFriends(Long userId) { // список пользователей, являющихся его друзьями
@@ -126,5 +119,11 @@ public class UserService {
         if (userId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + userId);
         }
+    }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
     }
 }
