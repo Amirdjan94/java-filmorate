@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
@@ -41,6 +43,26 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             "VALUES (?, ?)";
     private static final String DELETE_LIKE = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
     private static final String DELETE_FILMS_GENRES = "DELETE FROM film_genres WHERE film_id = ?";
+    private static final String INSERT_DIRECTORS_WITH_FILM = "INSERT INTO film_directors(film_id, director_id)" +
+            "VALUES (?, ?)";
+    private static final String DELETE_FILMS_DIRECTORS = "DELETE FROM film_directors WHERE film_id = ?";
+    private static final String FIND_BY_DIRECTOR_SORT_BY_LIKES =
+            "SELECT f.*, r.ratingMPAname, " +
+                    "(SELECT COUNT(*) FROM film_likes fl WHERE fl.film_id = f.film_id) AS likes_count " +
+                    "FROM film f " +
+                    "JOIN rating_mpa r ON f.ratingMpaId = r.ratingMpaId " +
+                    "JOIN film_directors fd ON f.film_id = fd.film_id " +
+                    "WHERE fd.director_id = ? " +
+                    "ORDER BY likes_count DESC";
+    private static final String FIND_BY_DIRECTOR_SORT_BY_YEAR =
+            "SELECT f.*, r.ratingMPAname FROM film f " +
+                    "JOIN rating_mpa r ON f.ratingMpaId = r.ratingMpaId " +
+                    "JOIN film_directors fd ON f.film_id = fd.film_id " +
+                    "WHERE fd.director_id = ? " +
+                    "ORDER BY f.releaseDate";
+    private static final String FIND_DIRECTORS_BY_FILM_ID = "SELECT d.director_id, d.name, d.lastname FROM directors d " +
+            "JOIN film_directors fd ON d.director_id = fd.director_id " +
+            "WHERE fd.film_id = ?";
 
     public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper);
@@ -58,7 +80,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         );
         film.setId(id);
         insertGenresWithFilm(film);
-        return film;
+        insertDirectorsWithFilm(film);
+        return getFilmById(id).get();
     }
 
     @Override
@@ -77,6 +100,11 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             insertGenresWithFilm(newFilm);
         }
 
+        delete(DELETE_FILMS_DIRECTORS, currentFilm.getId());
+        if (newFilm.getDirectors() != null && !newFilm.getDirectors().isEmpty()) {
+            insertDirectorsWithFilm(newFilm);
+        }
+
         return getFilmById(currentFilm.getId()).get();
     }
 
@@ -92,13 +120,34 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                         "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
                         "WHERE fg.film_id IN (" +
                         films.stream().map(Film::getId).map(Object::toString)
-                                .collect(Collectors.joining(",")) + ")",
+                                .collect(Collectors.joining(",")) + ") " +
+                        "ORDER BY g.genre_id",
                 rs -> {
-                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
                             .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
                 }
         );
-        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        Map<Long, Set<Director>> directorMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fd.film_id, d.director_id, d.name, d.lastname " +
+                        "FROM film_directors fd JOIN directors d ON fd.director_id = d.director_id " +
+                        "WHERE fd.film_id IN (" +
+                        films.stream().map(Film::getId).map(String::valueOf)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    directorMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
+                            .add(new Director(
+                                    rs.getLong("director_id"),
+                                    rs.getString("name"),
+                                    rs.getString("lastname")
+                            ));
+                }
+        );
+
+        films.forEach(f -> {
+            f.setGenres(genresMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+            f.setDirectors(directorMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+        });
         return films;
     }
 
@@ -114,7 +163,18 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                     ),
                     filmId
             );
-            film.get().setGenres(new HashSet<>(genresCollection));
+            film.get().setGenres(new LinkedHashSet<>(genresCollection));
+
+            Collection<Director> directors = jdbc.query(
+                    FIND_DIRECTORS_BY_FILM_ID,
+                    (rs, rowNum) -> new Director(
+                            rs.getLong("director_id"),
+                            rs.getString("name"),
+                            rs.getString("lastname")
+                    ),
+                    filmId
+            );
+            film.get().setDirectors(new LinkedHashSet<>(directors));
         }
         return film;
     }
@@ -131,13 +191,34 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
                         "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
                         "WHERE fg.film_id IN (" +
                         films.stream().map(Film::getId).map(Object::toString)
-                                .collect(Collectors.joining(",")) + ")",
+                                .collect(Collectors.joining(",")) + ") " +
+                        "ORDER BY g.genre_id",
                 rs -> {
-                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
                             .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
                 }
         );
-        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
+        Map<Long, Set<Director>> directorMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fd.film_id, d.director_id, d.name, d.lastname " +
+                        "FROM film_directors fd JOIN directors d ON fd.director_id = d.director_id " +
+                        "WHERE fd.film_id IN (" +
+                        films.stream().map(Film::getId).map(String::valueOf)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    directorMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
+                            .add(new Director(
+                                    rs.getLong("director_id"),
+                                    rs.getString("name"),
+                                    rs.getString("lastname")
+                            ));
+                }
+        );
+
+        films.forEach(f -> {
+            f.setGenres(genresMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+            f.setDirectors(directorMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+        });
         return films;
     }
 
@@ -225,5 +306,60 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         return findMany(
                 sql.toString(),
                 params.toArray());
+    }
+
+    private void insertDirectorsWithFilm(Film film) {
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            List<Object[]> batchArgs = new ArrayList<>();
+            for (Director d : film.getDirectors()) {
+                batchArgs.add(new Object[]{film.getId(), d.getId()});
+            }
+            jdbc.batchUpdate(INSERT_DIRECTORS_WITH_FILM, batchArgs);
+        }
+    }
+
+    @Override
+    public Collection<Film> getByDirector(Long id, String sortBy) {
+        if (!"year".equalsIgnoreCase(sortBy) && !"likes".equalsIgnoreCase(sortBy)) {
+            throw new ConditionsNotMetException("Параметр sortBy должен быть 'year' или 'likes'");
+        }
+        String query = sortBy.equalsIgnoreCase("year") ?
+                FIND_BY_DIRECTOR_SORT_BY_YEAR : FIND_BY_DIRECTOR_SORT_BY_LIKES;
+        List<Film> films = findMany(query, id);
+        if (films.isEmpty()) {
+            return films;
+        }
+        Map<Long, Set<Genres>> genresMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fg.film_id, g.genre_id, g.genre_name " +
+                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
+                        "WHERE fg.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ") " +
+                        "ORDER BY g.genre_id",
+                rs -> {
+                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
+                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
+                }
+        );
+        Map<Long, Set<Director>> directorMap = new HashMap<>();
+        jdbc.query(
+                "SELECT fd.film_id, d.director_id, d.name, d.lastname " +
+                        "FROM film_directors fd JOIN directors d ON fd.director_id = d.director_id " +
+                        "WHERE fd.film_id IN (" +
+                        films.stream().map(Film::getId).map(Object::toString)
+                                .collect(Collectors.joining(",")) + ")",
+                rs -> {
+                    directorMap.computeIfAbsent(rs.getLong("film_id"), k -> new LinkedHashSet<>())
+                            .add(new Director(rs.getLong("director_id"), rs.getString("name"),
+                                    rs.getString("lastname")));
+                }
+        );
+        films.forEach(f -> {
+            f.setGenres(genresMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+            f.setDirectors(directorMap.getOrDefault(f.getId(), new LinkedHashSet<>()));
+        });
+
+        return films;
     }
 }

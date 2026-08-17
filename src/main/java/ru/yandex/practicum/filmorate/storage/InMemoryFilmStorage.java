@@ -77,6 +77,11 @@ public class InMemoryFilmStorage implements FilmStorage {
         return film.getLikes().remove(user.getId());
     }
 
+    @Override
+    public Collection<Film> getByDirector(Long id, String sortBy) {
+        return List.of();
+    }
+
     public void clearStorage() {
         films.clear();
     }
