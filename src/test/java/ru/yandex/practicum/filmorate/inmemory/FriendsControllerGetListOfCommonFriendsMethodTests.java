@@ -2,10 +2,13 @@ package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
@@ -15,10 +18,15 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 
 @SpringBootTest
 public class FriendsControllerGetListOfCommonFriendsMethodTests {
-   UserService userService;
+    @Mock
+    FeedService feedService;
+    UserService userService;
     InMemoryUserStorage inMemoryUserStorage;
     User userFirst = User.builder()
             .email("example1@mail.ru")
@@ -41,9 +49,11 @@ public class FriendsControllerGetListOfCommonFriendsMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        MockitoAnnotations.openMocks(this);
         inMemoryUserStorage = new InMemoryUserStorage();
         FilmStorage filmStorage = new InMemoryFilmStorage();
-        userService = new UserService(inMemoryUserStorage, filmStorage);
+        doNothing().when(feedService).addFeed(anyLong(), anyLong(), any(), any());
+        userService = new UserService(inMemoryUserStorage, filmStorage, feedService);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
         inMemoryUserStorage.create(userSecond);
