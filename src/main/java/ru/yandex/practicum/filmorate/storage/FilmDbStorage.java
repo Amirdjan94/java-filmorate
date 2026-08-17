@@ -252,7 +252,60 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             }
             jdbc.batchUpdate(INSERT_GENRES_WITH_FILM, batchArgs);
         }
+    }
 
+    @Override
+    public List<Film> getPopular(int count,
+                                 Integer genreId,
+                                 Integer year) {
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT film.*, rating_mpa.ratingMPAname
+                FROM film
+                LEFT JOIN film_likes
+                    ON film.film_id = film_likes.film_id
+                JOIN rating_mpa
+                    ON film.ratingMpaId = rating_mpa.ratingMpaId
+                """);
+
+        List<Object> params = new ArrayList<>();
+
+        if (genreId != null) {
+            sql.append("""
+                    JOIN film_genres
+                        ON film.film_id = film_genres.film_id
+                    """);
+        }
+
+        sql.append(" WHERE 1=1 ");
+
+        if (genreId != null) {
+            sql.append(" AND film_genres.genre_id = ? ");
+            params.add(genreId);
+        }
+
+        if (year != null) {
+            sql.append(" AND YEAR(film.releaseDate) = ? ");
+            params.add(year);
+        }
+
+        sql.append("""
+                GROUP BY film.film_id,
+                         film.name,
+                         film.description,
+                         film.releaseDate,
+                         film.duration,
+                         film.ratingMpaId,
+                         rating_mpa.ratingMPAname
+                ORDER BY COUNT(film_likes.user_id) DESC
+                LIMIT ?
+                """);
+
+        params.add(count);
+
+        return findMany(
+                sql.toString(),
+                params.toArray());
     }
 
     private void insertDirectorsWithFilm(Film film) {
