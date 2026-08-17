@@ -8,7 +8,9 @@ import ru.yandex.practicum.filmorate.data.EventOperation;
 import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -22,9 +24,11 @@ public class UserService {
     private final UserStorage userStorage;
     @Autowired
     private FeedService feedService;
+    private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage, @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage) {
         this.userStorage = inMemoryUserStorage;
+        this.filmStorage = inMemoryFilmStorage;
     }
 
 
@@ -101,6 +105,11 @@ public class UserService {
         return user.get();
     }
 
+    public Collection<Film> getUserRecommendations(Long userId) {
+        User user = getUserById(userId);
+        return filmStorage.getUserRecommendations(user, getUsers());
+    }
+
     private void checkDuplicateId(Long firstId, Long secondId) {
         if (firstId == secondId) {
             throw new ConditionsNotMetException("Указан один и тот же пользователь");
@@ -123,5 +132,11 @@ public class UserService {
         if (userId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + userId);
         }
+    }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
     }
 }

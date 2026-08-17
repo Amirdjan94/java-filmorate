@@ -8,12 +8,14 @@ import ru.yandex.practicum.filmorate.data.EventOperation;
 import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,14 +31,14 @@ public class FilmService {
     private final UserService userService;
     @Autowired
     private FeedService feedService;
+    private final DirectorService directorService;
 
-    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
-                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
-                       @Qualifier("genresService") GenresService genresService) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService, @Qualifier("mpaDbStorage") MpaStorage mpaStorage, @Qualifier("directorService") DirectorService directorService, @Qualifier("genresService") GenresService genresService) {
         this.filmStorage = filmStorage;
         this.userService = userService;
         this.mpaStorage = mpaStorage;
         this.genresService = genresService;
+        this.directorService = directorService;
     }
 
     public Collection<Film> getFilms() {
@@ -47,6 +49,7 @@ public class FilmService {
         validateAndNormalizeFields(film);
         checkMpa(film);
         checkGenres(film);
+        checkDirectors(film);
         return filmStorage.create(film);
     }
 
@@ -58,6 +61,7 @@ public class FilmService {
         normalizeFields(film);
         checkMpa(film);
         checkGenres(film);
+        checkDirectors(film);
         Film currentFilm = getFilmById(film.getId());
         return filmStorage.update(film, currentFilm);
     }
@@ -106,6 +110,13 @@ public class FilmService {
         return filmStorage.getMostPopularFilms(count);
     }
 
+    public Collection<Film> getCommonUserFilms(Long userId, Long friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+
+        return filmStorage.getCommonUserFilms(userId, friendId);
+    }
+
     private void validateAndNormalizeFields(Film film) {
         releaseDateValidator(film);
         normalizeFields(film);
@@ -124,8 +135,7 @@ public class FilmService {
         log.debug("Ввалидация поля releaseDate");
         if (film.getReleaseDate() != null && film.getReleaseDate().isBefore(FIRST_FILM_RELEASE_DATE)) {
             log.warn("Дата релиза " + film.getReleaseDate());
-            throw new ConditionsNotMetException("Дата релиза — не раньше "
-                    + FIRST_FILM_RELEASE_DATE);
+            throw new ConditionsNotMetException("Дата релиза — не раньше " + FIRST_FILM_RELEASE_DATE);
         }
         log.debug("Поле releaseDate валиден");
     }
@@ -148,5 +158,31 @@ public class FilmService {
         if (film.getMpa() == null || mpaStorage.getMpaById(film.getMpa().getId()).isEmpty()) {
             throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
         }
+    }
+
+    public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        return filmStorage.getPopular(count, genreId, year);
+    }
+
+    public Collection<Film> getByDirector(Long directorId, String sortBy) {
+        directorService.findById(directorId);
+        return filmStorage.getByDirector(directorId, sortBy);
+    }
+
+    private void checkDirectors(Film film) {
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            for (Director director : film.getDirectors()) {
+                if (director.getId() == null) {
+                    throw new ConditionsNotMetException("ID режиссёра не может быть null");
+                }
+                directorService.findById(director.getId());
+            }
+        }
+    }
+
+    public void deleteFilm(long filmId) {
+        getFilmById(filmId);
+        filmStorage.deleteFilm(filmId);
+        log.info("Фильм с id={} удалён", filmId);
     }
 }
