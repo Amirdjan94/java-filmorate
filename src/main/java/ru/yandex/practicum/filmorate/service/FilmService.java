@@ -53,6 +53,7 @@ public class FilmService {
         checkMpa(film);
         checkGenres(film);
         checkDirectors(film);
+        log.info("Creating film with genres: {}", film.getGenres());
         return filmStorage.create(film);
     }
 

@@ -306,6 +306,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     private void insertGenresWithFilm(Film film) {
+        log.info("insertGenresWithFilm: filmId={}, genres={}", film.getId(), film.getGenres());
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             List<Object[]> batchArgs = new ArrayList<>();
             for (Genres genre : film.getGenres()) {
@@ -364,9 +365,12 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
         params.add(count);
 
-        return findMany(
-                sql.toString(),
-                params.toArray());
+        List<Film> films = findMany(sql.toString(), params.toArray());
+        if (!films.isEmpty()) {
+            loadGenres(films);
+            loadDirectors(films);
+        }
+        return films;
     }
 
     @Override
