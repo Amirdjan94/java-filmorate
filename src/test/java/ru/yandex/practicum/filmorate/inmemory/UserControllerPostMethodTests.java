@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
@@ -19,7 +21,8 @@ class UserControllerPostMethodTests {
     @BeforeEach
     void beforeEach() {
         inMemoryUserStorage = new InMemoryUserStorage();
-        userService = new UserService(inMemoryUserStorage);
+        FilmStorage filmStorage = new InMemoryFilmStorage();
+        userService = new UserService(inMemoryUserStorage, filmStorage);
         inMemoryUserStorage.clearStorage();
     }
 
