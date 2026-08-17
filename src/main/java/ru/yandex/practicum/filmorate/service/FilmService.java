@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -147,6 +148,12 @@ public class FilmService {
         if (film.getMpa() == null || mpaStorage.getMpaById(film.getMpa().getId()).isEmpty()) {
             throw new ObjectNotFoundException("Не найден рейтинг MPA по указанному id");
         }
+    }
+
+    public List<Film> getPopular(int count,
+                                 Integer genreId,
+                                 Integer year) {
+        return filmStorage.getPopular(count, genreId, year);
     }
 
     public Collection<Film> getByDirector(Long directorId, String sortBy) {
