@@ -74,8 +74,10 @@ public class ReviewService {
         checkUserId(review);
         checkFilmId(review);
         Review currentReview = getReviewById(review.getReviewId());
-        feedService.addFeed(review.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.UPDATE);
-        return reviewStorage.update(review, currentReview);
+        if (reviewStorage.update(review, currentReview)) {
+            feedService.addFeed(currentReview.getReviewId(), currentReview.getUserId(), EventType.REVIEW, EventOperation.UPDATE);
+        }
+        return getReviewById(currentReview.getReviewId());
     }
 
     public Collection<Review> getAllReviewByFilmId(Long filmId, Long count) {
