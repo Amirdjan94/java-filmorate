@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.inmemory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FeedService;
@@ -53,7 +52,7 @@ class UserControllerGetUserByIdMethodTests {
 
     @Test
     void getUser_incorrectUserId_returnConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.getUserById(-3L),
-                "Ожидается выброс исключения ConditionsNotMetException");
+        assertThrows(ObjectNotFoundException.class, () -> userService.getUserById(-3L),
+                "Ожидается выброс исключения ObjectNotFoundException");
     }
 }

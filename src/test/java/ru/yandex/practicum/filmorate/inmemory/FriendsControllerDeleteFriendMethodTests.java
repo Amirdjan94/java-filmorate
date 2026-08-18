@@ -70,8 +70,8 @@ public class FriendsControllerDeleteFriendMethodTests {
 
     @Test
     void deleteFriend_incorrectUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.deleteFriend(-3L, 2L),
-                "Ожидается выброс исключения ConditionsNotMetException");
+        assertThrows(ObjectNotFoundException.class, () -> userService.deleteFriend(-3L, 2L),
+                "Ожидается выброс исключения ObjectNotFoundException");
         assertFalse(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается Не пустой список друзей");
     }

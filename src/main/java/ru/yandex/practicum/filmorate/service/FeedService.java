@@ -37,5 +37,7 @@ public class FeedService {
                 .operation(operation)
                 .entityId(entityId)
                 .build());
+        log.info("Adding feed: entityId={}, userId={}, eventType={}, operation={}", entityId, userId,
+                eventType, operation);
     }
 }
