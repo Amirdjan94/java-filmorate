@@ -79,9 +79,9 @@ public class FriendsControllerGetListOfCommonFriendsMethodTests {
 
     @Test
     void getListOfCommonFriends_incorrectUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class,
+        assertThrows(ObjectNotFoundException.class,
                 () -> userService.getListOfCommonFriends(1L, -2L).contains(userThird),
-                "Ожидается выброс исключения ConditionsNotMetException");
+                "Ожидается выброс исключения ObjectNotFoundException");
     }
 
     @Test

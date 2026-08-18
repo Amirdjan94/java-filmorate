@@ -68,12 +68,12 @@ public class ReviewDbStorage extends BaseRepository<Review> implements ReviewSto
     }
 
     @Override
-    public Review update(Review review, Review currentReview) {
-        update(UPDATE_QUERY,
+    public boolean update(Review review, Review currentReview) {
+        return update(UPDATE_QUERY,
                 review.getContent(),
                 review.isPositive(),
-                currentReview.getReviewId());
-        return getReviewById(currentReview.getReviewId()).get();
+                currentReview.getReviewId()
+        );
     }
 
     @Override

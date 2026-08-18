@@ -72,8 +72,8 @@ public class FriendsControllerAddFriendMethodTests {
 
     @Test
     void addFriends_incorrectUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(-3L, 2L),
-                "Ожидается выброс исключения ConditionsNotMetException");
+        assertThrows(ObjectNotFoundException.class, () -> userService.addFriend(-3L, 2L),
+                "Ожидается выброс исключения ObjectNotFoundException");
         assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }
