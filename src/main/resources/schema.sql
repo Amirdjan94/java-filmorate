@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS film_likes (
   film_id INTEGER,
   user_id INTEGER,
-  CONSTRAINT unique_film_likes UNIQUE (film_id, user_id),
   FOREIGN KEY (film_id) REFERENCES film(film_id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );

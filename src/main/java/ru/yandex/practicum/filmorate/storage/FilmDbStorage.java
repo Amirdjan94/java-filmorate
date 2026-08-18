@@ -99,14 +99,13 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         );
         if (currentFilm.getGenres().size() != 0) {
             delete(DELETE_FILMS_GENRES, currentFilm.getId());
-            insertGenresWithFilm(newFilm);
-        }
 
+        }
+        insertGenresWithFilm(newFilm);
         delete(DELETE_FILMS_DIRECTORS, currentFilm.getId());
         if (newFilm.getDirectors() != null && !newFilm.getDirectors().isEmpty()) {
             insertDirectorsWithFilm(newFilm);
         }
-
         return getFilmById(currentFilm.getId()).get();
     }
 

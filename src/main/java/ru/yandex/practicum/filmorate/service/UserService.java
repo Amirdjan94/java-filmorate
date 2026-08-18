@@ -37,8 +37,8 @@ public class UserService {
 
     public Map<String, String> addFriend(Long userId, Long friendId) {
         log.info("Получили запрос на добавление в друзья для пользователя с ID-" + userId + " и ID-" + friendId);
+        checkUsersId(userId, friendId);
         checkDuplicateId(userId, friendId);
-
         User user = getUserById(userId);
         User friend = getUserById(friendId);
 
@@ -153,10 +153,13 @@ public class UserService {
         }
     }
 
-    private void checkUsersId(Long userId) {
-        if (userId <= 0L) {
-            throw new ConditionsNotMetException("Не корректный ID - " + userId);
+    private void checkUsersId(Long... usersId) {
+        for (Long l : usersId) {
+            if (l <= 0L) {
+                throw new ObjectNotFoundException("Не корректный ID - " + l);
+            }
         }
+
     }
 
     public void deleteUser(long userId) {
