@@ -8,9 +8,8 @@ import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
-import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
-import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
 import java.util.Collection;
 import java.util.Map;
@@ -24,11 +23,7 @@ public class ReviewService {
     @Autowired
     private UserService userService;
     @Autowired
-    private FilmService filmService;
-    @Autowired
-    private FilmDbStorage filmDbStorage;
-    @Autowired
-    private UserDbStorage userDbStorage;
+    private FilmStorage filmDbStorage;
     @Autowired
     private FeedService feedService;
 
@@ -159,9 +154,10 @@ public class ReviewService {
     }
 
     private void checkUserId(Review review) {
-        if (review.getUserId() <= 0 || userDbStorage.getUserById(review.getUserId()).isEmpty()) {
+        if (review.getUserId() <= 0) {
             throw new ObjectNotFoundException("Нет пользователя по указанному Id");
         }
+        userService.getUserById(review.getUserId());
     }
 
     private void checkFilmId(Review review) {
