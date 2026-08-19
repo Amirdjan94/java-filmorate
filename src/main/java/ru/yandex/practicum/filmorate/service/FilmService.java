@@ -172,6 +172,12 @@ public class FilmService {
     }
 
     public List<Film> searchFilms(String query, String by) {
+        if (query == null) {
+            throw new ConditionsNotMetException("Query не может быть null");
+        }
+        if (by == null) {
+            throw new ConditionsNotMetException("By не может быть null");
+        }
         // Нормализация
         query = query.trim();
         by = by.trim().replaceAll("\\s+", "");
