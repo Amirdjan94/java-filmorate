@@ -132,7 +132,7 @@ public class UserService {
 
     public Collection<Film> getUserRecommendations(Long userId) {
         User user = getUserById(userId);
-        return filmStorage.getUserRecommendations(user, getUsers());
+        return filmStorage.getUserRecommendations(user);
     }
 
     private void checkDuplicateId(Long firstId, Long secondId) {
