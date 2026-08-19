@@ -72,7 +72,7 @@ public class UserService {
                 .map(User::getId)
                 .collect(Collectors.toSet());
 
-        if (!friendsList.contains(friendId) || !friendIds.contains(userId)) {
+        if (!friendIds.contains(friendId)) {
             throw new ObjectNotFoundException("Пользователь с id=" + friendId + " не является другом");
         }
 
