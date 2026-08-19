@@ -1,20 +1,23 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genres;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static ru.yandex.practicum.filmorate.data.Constants.FIRST_FILM_RELEASE_DATE;
 
@@ -26,6 +29,8 @@ public class FilmService {
     private final MpaStorage mpaStorage;
     private final GenresService genresService;
     private final UserService userService;
+    @Autowired
+    private FeedService feedService;
     private final DirectorService directorService;
 
     public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage, UserService userService,
@@ -48,6 +53,7 @@ public class FilmService {
         checkMpa(film);
         checkGenres(film);
         checkDirectors(film);
+        log.info("Creating film with genres: {}", film.getGenres());
         return filmStorage.create(film);
     }
 
@@ -79,7 +85,10 @@ public class FilmService {
         Film film = getFilmById(filmId);
         filmStorage.addLike(film, user);
         log.info("Лайк успешно добавлен");
-        return Map.of("operation", "Add new like");
+        feedService.addFeed(filmId, userId, EventType.LIKE, EventOperation.ADD);
+        return Map.of(
+                "operation", "Add new like"
+        );
     }
 
     public Map<String, String> deleteLike(Long filmId, Long userId) { // удаление лайка
@@ -87,7 +96,11 @@ public class FilmService {
         User user = userService.getUserById(userId); // Если пользоваеля нет по указанному ID или не валидный ID, будет выброшен exception
         Film film = getFilmById(filmId);
         if (filmStorage.deleteLike(film, user)) {
-            return Map.of("status", "success", "operation", "Delete like");
+            feedService.addFeed(filmId, userId, EventType.LIKE, EventOperation.REMOVE);
+            return Map.of(
+                    "status", "success",
+                    "operation", "Delete like"
+            );
         } else {
             throw new ConditionsNotMetException("Film don't have like for this user");
         }
@@ -132,16 +145,25 @@ public class FilmService {
     }
 
     private void checkFilmsId(Long filmId) {
-        if (filmId <= 0L) {
+        if (filmId == null || filmId <= 0L) {
             throw new ConditionsNotMetException("Не корректный ID - " + filmId);
         }
     }
 
     private void checkGenres(Film film) {
-        if (film.getGenres() != null) {
-            if (genresService.getGenresListById(film.getGenres()).size() != film.getGenres().size()) {
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Genres> fullGenres = genresService.getGenresListById(film.getGenres());
+            if (fullGenres.size() != film.getGenres().size()) {
                 throw new ObjectNotFoundException("Передан не существующий жанр");
             }
+
+            Map<Long, Genres> genresMap = fullGenres.stream()
+                    .collect(Collectors.toMap(Genres::getId, g -> g));
+            Set<Genres> updatedGenres = film.getGenres().stream()
+                    .map(g -> genresMap.get(g.getId()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            film.setGenres(updatedGenres);
         }
     }
 
@@ -152,6 +174,21 @@ public class FilmService {
     }
 
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        if (count <= 0) {
+            throw new ConditionsNotMetException("count должен быть больше нуля");
+        }
+
+        if (genreId != null) {
+            genresService.getGenresById(Long.valueOf(genreId));
+        }
+
+        if (year != null) {
+            int currentYear = LocalDate.now().getYear();
+            if (year < 1895 || year > currentYear) {
+                throw new ConditionsNotMetException("Год должен быть между 1895 и " + currentYear);
+            }
+        }
+
         return filmStorage.getPopular(count, genreId, year);
     }
 
