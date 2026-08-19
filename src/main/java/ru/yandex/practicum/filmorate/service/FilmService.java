@@ -15,6 +15,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.MpaStorage;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -173,6 +174,21 @@ public class FilmService {
     }
 
     public List<Film> getPopular(int count, Integer genreId, Integer year) {
+        if (count <= 0) {
+            throw new ConditionsNotMetException("count должен быть больше нуля");
+        }
+
+        if (genreId != null) {
+            genresService.getGenresById(Long.valueOf(genreId));
+        }
+
+        if (year != null) {
+            int currentYear = LocalDate.now().getYear();
+            if (year < 1895 || year > currentYear) {
+                throw new ConditionsNotMetException("Год должен быть между 1895 и " + currentYear);
+            }
+        }
+
         return filmStorage.getPopular(count, genreId, year);
     }
 
@@ -193,6 +209,12 @@ public class FilmService {
     }
 
     public List<Film> searchFilms(String query, String by) {
+        if (query == null) {
+            throw new ConditionsNotMetException("Query не может быть null");
+        }
+        if (by == null) {
+            throw new ConditionsNotMetException("By не может быть null");
+        }
         // Нормализация
         query = query.trim();
         by = by.trim().replaceAll("\\s+", "");
