@@ -3,46 +3,82 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 public class UserService {
 
     private final UserStorage userStorage;
+    private FeedService feedService;
+    private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage,
+                       @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage,
+                       FeedService feedService) {
         this.userStorage = inMemoryUserStorage;
+        this.filmStorage = inMemoryFilmStorage;
+        this.feedService = feedService;
     }
 
 
-    public Map<String, String> addFriend(Long userId, Long friendId) { // добавление в друзья
+    public Map<String, String> addFriend(Long userId, Long friendId) {
         log.info("Получили запрос на добавление в друзья для пользователя с ID-" + userId + " и ID-" + friendId);
-        log.debug("Запуск валидации входных данных");
+        checkUsersId(userId, friendId);
         checkDuplicateId(userId, friendId);
-        log.debug("Корректные входные данные");
-        userStorage.addFriend(getUserById(userId), getUserById(friendId));
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
+
+        Collection<User> friendsList = getListOfFriends(userId);
+        Set<Long> friendIds = friendsList.stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
+        if (friendIds.contains(friendId)) {
+            throw new ConditionsNotMetException("Пользователь уже в друзьях");
+        }
+
+        userStorage.addFriend(user, friend);
         log.info("Добавление в список друзей прошло успешно");
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.ADD);
         return Map.of(
                 "status", "success",
                 "operation", "Add new friend"
         );
     }
 
-    public Map<String, String> deleteFriend(Long userId, Long friendId) { // удаление из друзей
+    public Map<String, String> deleteFriend(Long userId, Long friendId) {
         log.info("Получили запрос на удаление друзей для пользователя с ID-" + userId + " и ID-" + friendId);
-        log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
-        log.debug("Корректные входные данные");
-        userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
+
+        User user = getUserById(userId);
+        User friend = getUserById(friendId);
+
+        Collection<User> friendsList = getListOfFriends(userId);
+        Set<Long> friendIds = friendsList.stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
+        if (!friendIds.contains(friendId)) {
+            throw new ObjectNotFoundException("Пользователь с id=" + friendId + " не является другом");
+        }
+
+        userStorage.deleteFriend(user, friend);
         log.info("Удаление из списка друзей прошло успешно");
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.REMOVE);
         return Map.of(
                 "status", "success",
                 "operation", "Delete friend"
@@ -94,6 +130,11 @@ public class UserService {
         return user.get();
     }
 
+    public Collection<Film> getUserRecommendations(Long userId) {
+        User user = getUserById(userId);
+        return filmStorage.getUserRecommendations(user, getUsers());
+    }
+
     private void checkDuplicateId(Long firstId, Long secondId) {
         if (firstId == secondId) {
             throw new ConditionsNotMetException("Указан один и тот же пользователь");
@@ -112,9 +153,18 @@ public class UserService {
         }
     }
 
-    private void checkUsersId(Long userId) {
-        if (userId <= 0L) {
-            throw new ConditionsNotMetException("Не корректный ID - " + userId);
+    private void checkUsersId(Long... usersId) {
+        for (Long l : usersId) {
+            if (l <= 0L) {
+                throw new ObjectNotFoundException("Не корректный ID - " + l);
+            }
         }
+
+    }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
     }
 }

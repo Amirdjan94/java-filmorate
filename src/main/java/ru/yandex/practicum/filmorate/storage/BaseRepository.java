@@ -50,11 +50,12 @@ public class BaseRepository<T> {
         }
     }
 
-    protected void update(String query, Object... params) {
+    protected boolean update(String query, Object... params) {
         int rowsUpdated = jdbc.update(query, params);
         if (rowsUpdated == 0) {
             throw new InternalServerException("Не удалось обновить данные");
         }
+        return rowsUpdated > 0;
     }
 
     protected boolean delete(String query, Object... params) {

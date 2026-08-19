@@ -3,10 +3,12 @@ package ru.yandex.practicum.filmorate.inmemory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
@@ -28,7 +30,9 @@ class UserControllerGetUserByIdMethodTests {
     @BeforeEach
     void beforeEach() {
         inMemoryUserStorage = new InMemoryUserStorage();
-        userService = new UserService(inMemoryUserStorage);
+        FilmStorage filmStorage = new InMemoryFilmStorage();
+        FeedService feedService = new FeedService();
+        userService = new UserService(inMemoryUserStorage, filmStorage, feedService);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(user);
     }
@@ -48,7 +52,7 @@ class UserControllerGetUserByIdMethodTests {
 
     @Test
     void getUser_incorrectUserId_returnConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.getUserById(-3L),
-                "Ожидается выброс исключения ConditionsNotMetException");
+        assertThrows(ObjectNotFoundException.class, () -> userService.getUserById(-3L),
+                "Ожидается выброс исключения ObjectNotFoundException");
     }
 }

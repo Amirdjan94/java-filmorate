@@ -3,12 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
-import ru.yandex.practicum.filmorate.storage.FilmDbStorage;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.ReviewStorage;
-import ru.yandex.practicum.filmorate.storage.UserDbStorage;
 
 import java.util.Collection;
 import java.util.Map;
@@ -22,18 +23,18 @@ public class ReviewService {
     @Autowired
     private UserService userService;
     @Autowired
-    private FilmService filmService;
+    private FilmStorage filmDbStorage;
     @Autowired
-    private FilmDbStorage filmDbStorage;
-    @Autowired
-    private UserDbStorage userDbStorage;
+    private FeedService feedService;
 
 
     public Review create(Review review) {
         normalizeFields(review);
         checkUserId(review);
         checkFilmId(review);
-        return reviewStorage.create(review);
+        Review adderReview = reviewStorage.create(review);
+        feedService.addFeed(adderReview.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.ADD);
+        return adderReview;
     }
 
     public Review getReviewById(Long id) {
@@ -46,8 +47,9 @@ public class ReviewService {
     }
 
     public Map<String, String> delete(Long id) {
-        getReviewById(id); // Если нет отзыва по указонному ид, упадет ошибка
+        Review review = getReviewById(id); // Если нет отзыва по указонному ид, упадет ошибка
         if (reviewStorage.delete(id)) {
+            feedService.addFeed(review.getReviewId(), review.getUserId(), EventType.REVIEW, EventOperation.REMOVE);
             return Map.of(
                     "status", "success",
                     "operation", "Delete review"
@@ -67,7 +69,10 @@ public class ReviewService {
         checkUserId(review);
         checkFilmId(review);
         Review currentReview = getReviewById(review.getReviewId());
-        return reviewStorage.update(review, currentReview);
+        if (reviewStorage.update(review, currentReview)) {
+            feedService.addFeed(currentReview.getReviewId(), currentReview.getUserId(), EventType.REVIEW, EventOperation.UPDATE);
+        }
+        return getReviewById(currentReview.getReviewId());
     }
 
     public Collection<Review> getAllReviewByFilmId(Long filmId, Long count) {
@@ -149,9 +154,10 @@ public class ReviewService {
     }
 
     private void checkUserId(Review review) {
-        if (review.getUserId() <= 0 || userDbStorage.getUserById(review.getUserId()).isEmpty()) {
+        if (review.getUserId() <= 0) {
             throw new ObjectNotFoundException("Нет пользователя по указанному Id");
         }
+        userService.getUserById(review.getUserId());
     }
 
     private void checkFilmId(Review review) {
