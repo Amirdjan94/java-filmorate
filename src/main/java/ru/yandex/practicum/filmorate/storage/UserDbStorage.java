@@ -109,20 +109,12 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
         if (countFollowedFriend != 0) {
             update(UPDATE_SET_FALSE_CONF, false, user.getId());
         } else if (countFollowingFriend != 0) {
-            Boolean confirmation = jdbc.queryForObject(SEARCH_FOLLOWED_FRIEND_GET_CONF, Boolean.class,
-                    user.getId(), friend.getId());
-            if (confirmation) {
-                jdbc.update(DELETE_FRIEND, user.getId(), friend.getId());
-                jdbc.update(INSERT_FRIEND, friend.getId(), user.getId());
-            } else {
-                jdbc.update(DELETE_FRIEND, user.getId(), friend.getId());
-            }
-            /*if (jdbc.queryForObject(SEARCH_FOLLOWED_FRIEND_GET_CONF, Boolean.class, user.getId(), friend.getId())) {
+            if (jdbc.queryForObject(SEARCH_FOLLOWED_FRIEND_GET_CONF, Boolean.class, user.getId(), friend.getId())) {
                 delete(DELETE_FRIEND, user.getId(), friend.getId());
                 addFriend(friend, user);
             } else {
                 delete(DELETE_FRIEND, user.getId(), friend.getId());
-            }*/
+            }
         }
     }
 
