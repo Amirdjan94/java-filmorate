@@ -172,8 +172,43 @@ public class FilmService {
         }
     }
 
-    public List<Film> getPopular(int count, Integer genreId, Integer year) {
-        return filmStorage.getPopular(count, genreId, year);
+    public List<Film> getPopular(int count,
+                                 Integer genreId,
+                                 Integer year) {
+
+        if (count <= 0) {
+            throw new ConditionsNotMetException(
+                    "count должен быть больше нуля"
+            );
+        }
+
+        if (genreId != null) {
+            genresService.getGenresById(
+                    Long.valueOf(genreId)
+            );
+        }
+
+        if (year != null) {
+
+            if (year < FIRST_FILM_RELEASE_DATE.getYear()) {
+                throw new ConditionsNotMetException(
+                        "Год не может быть раньше " +
+                                FIRST_FILM_RELEASE_DATE.getYear()
+                );
+            }
+
+            if (year > java.time.LocalDate.now().getYear()) {
+                throw new ConditionsNotMetException(
+                        "Год не может быть больше текущего"
+                );
+            }
+        }
+
+        return filmStorage.getPopular(
+                count,
+                genreId,
+                year
+        );
     }
 
     public Collection<Film> getByDirector(Long directorId, String sortBy) {
