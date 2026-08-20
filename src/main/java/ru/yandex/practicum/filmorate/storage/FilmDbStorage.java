@@ -65,6 +65,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             "JOIN film_directors fd ON d.director_id = fd.director_id " +
             "WHERE fd.film_id = ?";
     private static final String DELETE_FILM = "DELETE FROM film WHERE film_id = ?";
+    private static final String FIND_COUNT_ALL_FILMS = "SELECT COUNT(*) FROM film";
 
     public FilmDbStorage(JdbcTemplate jdbc, RowMapper<Film> mapper) {
         super(jdbc, mapper);
@@ -176,91 +177,84 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> getUserRecommendations(User targetUser, Collection<User> allUsers) {
+    public Collection<Film> getUserRecommendations(User targetUser) {
         log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId() + " на основе пересечений лайков");
 
-        if (getFilms().isEmpty()) {
+        Integer filmsCount = jdbc.queryForObject(FIND_COUNT_ALL_FILMS, Integer.class);
+        if (filmsCount == null || filmsCount == 0) {
             throw new ObjectNotFoundException("Фильмы не найдены");
         }
 
-        // получаем все лайки из БД одним запросом
-        Map<Long, Set<Long>> userLikesMap = loadAllUserLikes();
+        // проверяем наличие лайков у пользователя
+        Integer targetUserLikesCount = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM film_likes WHERE user_id = ?",
+                Integer.class,
+                targetUser.getId()
+        );
 
-        // получаем лайки целевого пользователя
-        Set<Long> targetUserLikes = userLikesMap.getOrDefault(targetUser.getId(), new HashSet<>());
-
-        if (targetUserLikes.isEmpty()) {
+        if (targetUserLikesCount == null || targetUserLikesCount == 0) {
             log.info("У целевого пользователя нет лайков, рекомендации невозможны");
             return Collections.emptyList();
         }
 
-        // находим пользователей с максимальным пересечением по лайкам
-        List<UserSimilarity> similarities = new ArrayList<>();
+        // получаем список пользователей, которые лайкали те же фильмы что и таргет
+        String sql = "SELECT DISTINCT fl2.user_id " +
+                "FROM film_likes fl1 " +
+                "JOIN film_likes fl2 ON fl1.film_id = fl2.film_id " +
+                "WHERE fl1.user_id = ? AND fl2.user_id != ? " +
+                "ORDER BY fl2.user_id DESC";
+        List<Long> sameUsersLikes = jdbc.queryForList(sql, Long.class, targetUser.getId(), targetUser.getId());
 
-        for (User user : allUsers) {
-            if (user.getId().equals(targetUser.getId())) {
-                continue; // пропускаем самого себя
-            }
-
-            Set<Long> userLikes = userLikesMap.getOrDefault(user.getId(), new HashSet<>());
-
-            // вычисляем пересечение (количество общих лайков)
-            Set<Long> intersection = new HashSet<>(targetUserLikes);
-            intersection.retainAll(userLikes);
-
-            int commonCount = intersection.size();
-
-            // если есть хотя бы 1 общий лайк - добавляем в список
-            if (commonCount > 0) {
-                // Вычисляем фильмы, которые лайкнул этот пользователь, но не лайкнул целевой
-                Set<Long> newFilms = new HashSet<>(userLikes);
-                newFilms.removeAll(targetUserLikes);
-
-                similarities.add(new UserSimilarity(user, commonCount, newFilms));
-            }
-        }
-
-        // сортируем по количеству общих лайков (по убыванию)
-        similarities.sort((a, b) -> Integer.compare(b.commonCount, a.commonCount));
-
-        if (similarities.isEmpty()) {
+        if (sameUsersLikes.isEmpty()) {
             log.info("Не найдено пользователей с общими лайками");
             return Collections.emptyList();
         }
 
-        // выбираем топ-5 похожих пользователей (или всех, если их меньше)
-        int topN = Math.min(5, similarities.size());
-        List<UserSimilarity> topUsers = similarities.subList(0, topN);
+        log.info("Найдено {} похожих пользователей", sameUsersLikes.size());
 
-        log.info("Найдено {} похожих пользователей, берем топ-{}", similarities.size(), topN);
+        // формируем плейсхолдеры для IN
+        String placeholders = String.join(",", Collections.nCopies(sameUsersLikes.size(), "?"));
 
-        // собираем рекомендуемые фильмы с весом (количество похожих пользователей, которые его лайкнули)
-        Map<Long, Integer> filmScore = new HashMap<>();
-        Map<Long, Set<Long>> filmFromUsers = new HashMap<>(); // для отладки
+        String recommendSql = "SELECT " +
+                "    fl.film_id AS \"film.film_id\", " +
+                "    f.name AS \"film.name\", " +
+                "    f.duration AS \"film.duration\", " +
+                "    f.description AS \"film.description\", " +
+                "    f.releaseDate AS \"film.releaseDate\", " +
+                "    f.ratingMpaId AS \"film.ratingMpaId\", " +
+                "    rmp.ratingMPAname AS \"rating_mpa.ratingMPAname\", " +
+                "    COUNT(*) AS likes_count " +
+                "FROM " +
+                "    film_likes fl " +
+                "JOIN " +
+                "    film f ON fl.film_id = f.film_id " +
+                "LEFT JOIN " +
+                "    rating_mpa rmp ON f.ratingMpaId = rmp.ratingMpaId " +
+                "WHERE " +
+                "    fl.user_id IN (" + placeholders + ") " +
+                "    AND fl.film_id NOT IN ( " +
+                "        SELECT film_id " +
+                "        FROM film_likes " +
+                "        WHERE user_id = ? " +
+                "    ) " +
+                "GROUP BY " +
+                "    fl.film_id, f.name, f.duration, f.description, f.releaseDate, " +
+                "    f.ratingMpaId, rmp.ratingMPAname " +
+                "ORDER BY " +
+                "    likes_count DESC, " +
+                "    fl.film_id";
 
-        for (UserSimilarity similarUser : topUsers) {
-            for (Long filmId : similarUser.newFilms) {
-                filmScore.put(filmId, filmScore.getOrDefault(filmId, 0) + 1);
-                filmFromUsers.computeIfAbsent(filmId, k -> new HashSet<>()).add(similarUser.user.getId());
-            }
+        // Формируем массив параметров
+        Object[] params = new Object[sameUsersLikes.size() + 1];
+        for (int i = 0; i < sameUsersLikes.size(); i++) {
+            params[i] = sameUsersLikes.get(i);
         }
+        params[sameUsersLikes.size()] = targetUser.getId();
 
-        // сортируем фильмы по весу (количеству похожих пользователей) и ID
-        List<Film> recommendations = filmScore.entrySet().stream()
-                .sorted((e1, e2) -> {
-                    int compare = Integer.compare(e2.getValue(), e1.getValue()); // по убыванию веса
-                    if (compare == 0) {
-                        return Long.compare(e1.getKey(), e2.getKey()); // по ID
-                    }
-                    return compare;
-                })
-                .map(entry -> getFilmById(entry.getKey()).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        // выполняем запрос и возвращаем список фильмов
+        List<Film> recommendations = jdbc.query(recommendSql, params, mapper);
 
-        log.info("Найдено рекомендаций: {} (из {} уникальных фильмов)",
-                recommendations.size(), filmScore.size());
-
+        log.info("Найдено рекомендаций: {}", recommendations.size());
         return recommendations;
     }
 
@@ -527,30 +521,5 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
         );
 
         films.forEach(f -> f.setLikes(likesMap.getOrDefault(f.getId(), new HashSet<>())));
-    }
-
-    private Map<Long, Set<Long>> loadAllUserLikes() {
-        String sql = "SELECT user_id, film_id FROM film_likes";
-        Map<Long, Set<Long>> userLikesMap = new HashMap<>();
-
-        jdbc.query(sql, (rs) -> {
-            Long userId = rs.getLong("user_id");
-            Long filmId = rs.getLong("film_id");
-            userLikesMap.computeIfAbsent(userId, k -> new HashSet<>()).add(filmId);
-        });
-
-        return userLikesMap;
-    }
-
-    private static class UserSimilarity {
-        private final User user;
-        private final int commonCount;
-        private final Set<Long> newFilms; // фильмы, которые есть у user, но нет у target
-
-        public UserSimilarity(User user, int commonCount, Set<Long> newFilms) {
-            this.user = user;
-            this.commonCount = commonCount;
-            this.newFilms = newFilms;
-        }
     }
 }

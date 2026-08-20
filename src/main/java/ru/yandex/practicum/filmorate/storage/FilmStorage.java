@@ -22,7 +22,7 @@ public interface FilmStorage {
 
     boolean deleteLike(Film film, User user);
 
-    Collection<Film> getUserRecommendations(User user, Collection<User> users);
+    Collection<Film> getUserRecommendations(User user);
 
     Collection<Film> getCommonUserFilms(Long userId, Long friendId);
 
