@@ -3,8 +3,6 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.data.EventOperation;
-import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -15,8 +13,6 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -35,50 +31,26 @@ public class UserService {
     }
 
 
-    public Map<String, String> addFriend(Long userId, Long friendId) {
+    public Map<String, String> addFriend(Long userId, Long friendId) { // добавление в друзья
         log.info("Получили запрос на добавление в друзья для пользователя с ID-" + userId + " и ID-" + friendId);
-        checkUsersId(userId, friendId);
+        log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        Collection<User> friendsList = getListOfFriends(userId);
-        Set<Long> friendIds = friendsList.stream()
-                .map(User::getId)
-                .collect(Collectors.toSet());
-
-        if (friendIds.contains(friendId)) {
-            throw new ConditionsNotMetException("Пользователь уже в друзьях");
-        }
-
-        userStorage.addFriend(user, friend);
+        log.debug("Корректные входные данные");
+        userStorage.addFriend(getUserById(userId), getUserById(friendId));
         log.info("Добавление в список друзей прошло успешно");
-        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.ADD);
         return Map.of(
                 "status", "success",
                 "operation", "Add new friend"
         );
     }
 
-    public Map<String, String> deleteFriend(Long userId, Long friendId) {
+    public Map<String, String> deleteFriend(Long userId, Long friendId) { // удаление из друзей
         log.info("Получили запрос на удаление друзей для пользователя с ID-" + userId + " и ID-" + friendId);
+        log.debug("Запуск валидации входных данных");
         checkDuplicateId(userId, friendId);
-
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        Collection<User> friendsList = getListOfFriends(userId);
-        Set<Long> friendIds = friendsList.stream()
-                .map(User::getId)
-                .collect(Collectors.toSet());
-
-        if (!friendIds.contains(friendId)) {
-            throw new ObjectNotFoundException("Пользователь с id=" + friendId + " не является другом");
-        }
-
-        userStorage.deleteFriend(user, friend);
+        log.debug("Корректные входные данные");
+        userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
         log.info("Удаление из списка друзей прошло успешно");
-        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.REMOVE);
         return Map.of(
                 "status", "success",
                 "operation", "Delete friend"
@@ -132,7 +104,7 @@ public class UserService {
 
     public Collection<Film> getUserRecommendations(Long userId) {
         User user = getUserById(userId);
-        return filmStorage.getUserRecommendations(user, getUsers());
+        return filmStorage.getUserRecommendations(user);
     }
 
     private void checkDuplicateId(Long firstId, Long secondId) {
