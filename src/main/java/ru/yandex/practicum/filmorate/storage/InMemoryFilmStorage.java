@@ -79,7 +79,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> getUserRecommendations(User targetUser, Collection<User> allUsers) {
+    public Collection<Film> getUserRecommendations(User targetUser) {
         log.info("Поиск рекомендаций для пользователя с ID-" + targetUser.getId() + " на основе пересечений лайков");
 
         if (films.values().isEmpty()) {
@@ -101,11 +101,16 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
 
         // находим ВСЕХ пользователей с пересечением по лайкам
-        Map<User, Set<Long>> similarUsersWithNewFilms = new HashMap<>();
-        Map<User, Integer> userSimilarityScore = new HashMap<>();
+        Map<Long, Set<Long>> similarUsersWithNewFilms = new HashMap<>();
+        Map<Long, Integer> userSimilarityScore = new HashMap<>();
 
-        for (User user : allUsers) {
-            if (user.getId().equals(targetUser.getId())) {
+        Set<Long> users = new  HashSet<>();
+        for (Film film : films.values()) {
+            users.add(film.getId());
+        }
+
+        for (Long userId : users) {
+            if (userId.equals(targetUser.getId())) {
                 continue;
             }
 
@@ -113,7 +118,7 @@ public class InMemoryFilmStorage implements FilmStorage {
             Set<Long> userLikedFilms = films.values().stream()
                     .filter(film -> {
                         Set<Long> filmLikes = film.getLikes();
-                        return filmLikes != null && filmLikes.contains(user.getId());
+                        return filmLikes != null && filmLikes.contains(userId);
                     })
                     .map(Film::getId)
                     .collect(Collectors.toSet());
@@ -134,8 +139,8 @@ public class InMemoryFilmStorage implements FilmStorage {
                 newFilms.removeAll(targetUserLikedFilms); // фильмы, которые есть у user, но нет у target
 
                 if (!newFilms.isEmpty()) {
-                    similarUsersWithNewFilms.put(user, newFilms);
-                    userSimilarityScore.put(user, commonCount);
+                    similarUsersWithNewFilms.put(userId, newFilms);
+                    userSimilarityScore.put(userId, commonCount);
                 }
             }
         }
@@ -146,7 +151,7 @@ public class InMemoryFilmStorage implements FilmStorage {
         }
 
         // сортируем ВСЕХ пользователей по максимальному пересечению
-        List<User> sortedUsers = similarUsersWithNewFilms.keySet().stream()
+        List<Long> sortedUsers = similarUsersWithNewFilms.keySet().stream()
                 .sorted((u1, u2) -> Integer.compare(
                         userSimilarityScore.getOrDefault(u2, 0),
                         userSimilarityScore.getOrDefault(u1, 0)
@@ -158,8 +163,8 @@ public class InMemoryFilmStorage implements FilmStorage {
 
         // Собираем рекомендуемые фильмы со ВСЕХ похожих пользователей
         Map<Long, Integer> filmScore = new HashMap<>();
-        for (User user : sortedUsers) {
-            Set<Long> newFilms = similarUsersWithNewFilms.get(user);
+        for (Long userId : sortedUsers) {
+            Set<Long> newFilms = similarUsersWithNewFilms.get(userId);
             for (Long filmId : newFilms) {
                 filmScore.put(filmId, filmScore.getOrDefault(filmId, 0) + 1);
             }
