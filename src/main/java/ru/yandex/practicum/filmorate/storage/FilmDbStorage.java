@@ -275,20 +275,8 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
             return films;
         }
 
-        Map<Long, Set<Genres>> genresMap = new HashMap<>();
-        jdbc.query(
-                "SELECT fg.film_id, g.genre_id, g.genre_name " +
-                        "FROM film_genres fg JOIN genres g ON fg.genre_id = g.genre_id " +
-                        "WHERE fg.film_id IN (" +
-                        films.stream().map(Film::getId).map(Object::toString)
-                                .collect(Collectors.joining(",")) + ")",
-                rs -> {
-                    genresMap.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>())
-                            .add(new Genres(rs.getLong("genre_id"), rs.getString("genre_name")));
-                }
-        );
+        loadGenres(films);
 
-        films.forEach(f -> f.setGenres(genresMap.getOrDefault(f.getId(), new HashSet<>())));
         return films;
     }
 
