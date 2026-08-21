@@ -238,10 +238,10 @@ public class FilmService {
         query = query.trim();
         by = by.trim().replaceAll("\\s+", "");
 
-        if (query.isBlank()) {
+        if (query == null || query.isBlank()) {
             throw new ConditionsNotMetException("Query не может быть пустым");
         }
-        if (by.isBlank()) {
+        if (by == null || by.isBlank()) {
             throw new ConditionsNotMetException("By не может быть пустым");
         }
 

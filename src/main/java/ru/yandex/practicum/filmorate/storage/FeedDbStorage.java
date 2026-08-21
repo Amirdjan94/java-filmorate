@@ -15,7 +15,7 @@ public class FeedDbStorage extends BaseRepository<Feed> implements FeedStorage {
     private static final String INSERT_FEED = "INSERT INTO feed(event_timestamp, user_id, event_type, operation, entity_id)" +
             "VALUES (?, ?, ?, ?, ?)";
     private static final String GET_ALL_FEED_BY_USER_ID =
-            "SELECT f.*, " +
+            "SELECT f.* " +
                     "FROM feed f " +
                     "JOIN users u ON f.user_id = u.user_id " +
                     "WHERE f.user_id = ? ";

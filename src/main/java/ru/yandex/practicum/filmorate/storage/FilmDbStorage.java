@@ -253,6 +253,7 @@ public class FilmDbStorage extends BaseRepository<Film> implements FilmStorage {
 
         // выполняем запрос и возвращаем список фильмов
         List<Film> recommendations = jdbc.query(recommendSql, params, mapper);
+        loadGenres(recommendations);
 
         log.info("Найдено рекомендаций: {}", recommendations.size());
         return recommendations;
