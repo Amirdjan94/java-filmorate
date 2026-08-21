@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.data.EventOperation;
 import ru.yandex.practicum.filmorate.data.EventType;
@@ -18,15 +18,19 @@ import java.util.Optional;
 @Service
 @Slf4j
 public class ReviewService {
-    @Autowired
+
     private ReviewStorage reviewStorage;
-    @Autowired
     private UserService userService;
-    @Autowired
-    private FilmStorage filmDbStorage;
-    @Autowired
+    private FilmStorage filmStorage;
     private FeedService feedService;
 
+    public ReviewService(@Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage, ReviewStorage reviewStorage,
+                         UserService userService, FeedService feedService) {
+        this.reviewStorage = reviewStorage;
+        this.userService = userService;
+        this.filmStorage = inMemoryFilmStorage;
+        this.feedService = feedService;
+    }
 
     public Review create(Review review) {
         normalizeFields(review);
@@ -78,7 +82,7 @@ public class ReviewService {
     public Collection<Review> getAllReviewByFilmId(Long filmId, Long count) {
         if (filmId != null) {
             checkId(filmId);
-            filmDbStorage.getFilmById(filmId);
+            filmStorage.getFilmById(filmId);
         }
         return reviewStorage.getAllReviewByFilmId(filmId, count);
     }
@@ -161,7 +165,7 @@ public class ReviewService {
     }
 
     private void checkFilmId(Review review) {
-        if (review.getFilmId() <= 0 || filmDbStorage.getFilmById(review.getFilmId()).isEmpty()) {
+        if (review.getFilmId() <= 0 || filmStorage.getFilmById(review.getFilmId()).isEmpty()) {
             throw new ObjectNotFoundException("Нет фильма по указанному Id");
         }
     }

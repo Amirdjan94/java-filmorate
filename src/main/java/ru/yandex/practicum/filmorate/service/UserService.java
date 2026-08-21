@@ -135,7 +135,6 @@ public class UserService {
                 throw new ObjectNotFoundException("Не корректный ID - " + l);
             }
         }
-
     }
 
     public void deleteUser(long userId) {
