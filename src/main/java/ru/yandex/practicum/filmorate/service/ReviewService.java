@@ -33,7 +33,6 @@ public class ReviewService {
         this.feedService = feedService;
     }
 
-
     public Review create(Review review) {
         normalizeFields(review);
         checkUserId(review);
