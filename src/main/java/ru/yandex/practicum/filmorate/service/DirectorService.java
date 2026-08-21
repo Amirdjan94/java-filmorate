@@ -22,7 +22,7 @@ public class DirectorService {
         if (id == null) {
             throw new ConditionsNotMetException("ID должен быть указан");
         }
-        return directorStorage.findById(id).orElseThrow(() -> new ObjectNotFoundException("Режиссер " +
+        return directorStorage.findById(id).orElseThrow(() -> new ObjectNotFoundException("Режиссер " + id +
                 "с таким ID не найден!"));
     }
 
