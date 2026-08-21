@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -37,6 +39,7 @@ public class UserService {
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
         userStorage.addFriend(getUserById(userId), getUserById(friendId));
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.ADD);
         log.info("Добавление в список друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -50,6 +53,7 @@ public class UserService {
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
         userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.REMOVE);
         log.info("Удаление из списка друзей прошло успешно");
         return Map.of(
                 "status", "success",
