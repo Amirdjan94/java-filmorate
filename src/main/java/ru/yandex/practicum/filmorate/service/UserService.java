@@ -3,9 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.data.EventOperation;
+import ru.yandex.practicum.filmorate.data.EventType;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.Collection;
@@ -17,9 +21,15 @@ import java.util.Optional;
 public class UserService {
 
     private final UserStorage userStorage;
+    private FeedService feedService;
+    private final FilmStorage filmStorage;
 
-    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage inMemoryUserStorage,
+                       @Qualifier("filmDbStorage") FilmStorage inMemoryFilmStorage,
+                       FeedService feedService) {
         this.userStorage = inMemoryUserStorage;
+        this.filmStorage = inMemoryFilmStorage;
+        this.feedService = feedService;
     }
 
 
@@ -29,6 +39,7 @@ public class UserService {
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
         userStorage.addFriend(getUserById(userId), getUserById(friendId));
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.ADD);
         log.info("Добавление в список друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -42,6 +53,7 @@ public class UserService {
         checkDuplicateId(userId, friendId);
         log.debug("Корректные входные данные");
         userStorage.deleteFriend(getUserById(userId), getUserById(friendId));
+        feedService.addFeed(friendId, userId, EventType.FRIEND, EventOperation.REMOVE);
         log.info("Удаление из списка друзей прошло успешно");
         return Map.of(
                 "status", "success",
@@ -94,6 +106,11 @@ public class UserService {
         return user.get();
     }
 
+    public Collection<Film> getUserRecommendations(Long userId) {
+        User user = getUserById(userId);
+        return filmStorage.getUserRecommendations(user);
+    }
+
     private void checkDuplicateId(Long firstId, Long secondId) {
         if (firstId == secondId) {
             throw new ConditionsNotMetException("Указан один и тот же пользователь");
@@ -112,9 +129,17 @@ public class UserService {
         }
     }
 
-    private void checkUsersId(Long userId) {
-        if (userId <= 0L) {
-            throw new ConditionsNotMetException("Не корректный ID - " + userId);
+    private void checkUsersId(Long... usersId) {
+        for (Long l : usersId) {
+            if (l <= 0L) {
+                throw new ObjectNotFoundException("Не корректный ID - " + l);
+            }
         }
+    }
+
+    public void deleteUser(long userId) {
+        getUserById(userId);
+        userStorage.deleteUser(userId);
+        log.info("Пользователь с id={} удалён", userId);
     }
 }

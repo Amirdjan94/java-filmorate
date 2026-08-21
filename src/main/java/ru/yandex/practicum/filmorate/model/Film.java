@@ -19,7 +19,6 @@ public class Film {
     @Size(max = 200)
     private String description;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @Past
     @NotNull
     private LocalDate releaseDate;
     @NotNull
@@ -30,11 +29,12 @@ public class Film {
     private Mpa mpa;
 
     private Set<Genres> genres;
+    private Set<Director> directors;
 
 
     @Builder
     public Film(Long id, String name, String description, LocalDate releaseDate, Integer duration,
-                Set<Long> likes, Mpa mpa, Set<Genres> genres) {
+                Set<Long> likes, Mpa mpa, Set<Genres> genres, Set<Director> directors) {
         this.description = description;
         this.duration = duration;
         this.id = id;
@@ -43,6 +43,7 @@ public class Film {
         this.releaseDate = releaseDate;
         this.mpa = mpa;
         this.genres = genres != null ? genres : new HashSet<Genres>();
+        this.directors = directors != null ? directors : new HashSet<Director>();
     }
 
     public Film() {

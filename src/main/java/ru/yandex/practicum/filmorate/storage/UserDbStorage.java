@@ -38,6 +38,8 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
             "SELECT users.* FROM users " +
             "JOIN follows ON users.user_id = follows.followed_user_id " +
             "WHERE follows.following_user_id = ?";
+    private static final String DELETE_USER = "DELETE FROM users WHERE user_id = ?";
+
 
     public UserDbStorage(JdbcTemplate jdbc, RowMapper<User> mapper) {
         super(jdbc, mapper);
@@ -138,5 +140,13 @@ public class UserDbStorage extends BaseRepository<User> implements UserStorage {
 
     public void deleteAllFriends() {
         jdbc.execute("DELETE FROM follows");
+    }
+
+    @Override
+    public void deleteUser(long userId) {
+        jdbc.update(
+                DELETE_USER,
+                userId
+        );
     }
 }

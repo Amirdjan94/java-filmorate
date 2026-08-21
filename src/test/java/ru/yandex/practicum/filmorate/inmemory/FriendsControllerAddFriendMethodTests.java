@@ -2,27 +2,39 @@ package ru.yandex.practicum.filmorate.inmemory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.excepton.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.excepton.ObjectNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FeedService;
 import ru.yandex.practicum.filmorate.service.UserService;
+import ru.yandex.practicum.filmorate.storage.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.InMemoryFilmStorage;
 import ru.yandex.practicum.filmorate.storage.InMemoryUserStorage;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 
 @SpringBootTest
 public class FriendsControllerAddFriendMethodTests {
-    UserService userService;
-    InMemoryUserStorage inMemoryUserStorage;
+    @Mock
+    private FeedService feedService;
+    private UserService userService;
+    private InMemoryUserStorage inMemoryUserStorage;
+
     User userFirst = User.builder()
             .email("example1@mail.ru")
             .login("userLogin")
             .birthday(LocalDate.of(1994, 12, 27))
             .name("Jhon")
             .build();
+
     User userSecond = User.builder()
             .email("example2@mail.ru")
             .login("userLogin")
@@ -32,8 +44,11 @@ public class FriendsControllerAddFriendMethodTests {
 
     @BeforeEach
     void beforeEach() {
+        MockitoAnnotations.openMocks(this);
         inMemoryUserStorage = new InMemoryUserStorage();
-        userService = new UserService(inMemoryUserStorage);
+        FilmStorage filmStorage = new InMemoryFilmStorage();
+        doNothing().when(feedService).addFeed(anyLong(), anyLong(), any(), any());
+        userService = new UserService(inMemoryUserStorage, filmStorage, feedService);
         inMemoryUserStorage.clearStorage();
         inMemoryUserStorage.create(userFirst);
         inMemoryUserStorage.create(userSecond);
@@ -57,8 +72,8 @@ public class FriendsControllerAddFriendMethodTests {
 
     @Test
     void addFriends_incorrectUsersId_returnsConditionsNotMetException() {
-        assertThrows(ConditionsNotMetException.class, () -> userService.addFriend(-3L, 2L),
-                "Ожидается выброс исключения ConditionsNotMetException");
+        assertThrows(ObjectNotFoundException.class, () -> userService.addFriend(-3L, 2L),
+                "Ожидается выброс исключения ObjectNotFoundException");
         assertTrue(userService.getUserById(1L).getFriends().isEmpty(),
                 "Ожидается пустой список друзей");
     }

@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Repository
 @Slf4j
 public class GenresDbStorage extends BaseRepository<Genres> implements GenresStorage {
-    private static final String FIND_ALL_GENRES = "SELECT * FROM genres";
+    private static final String FIND_ALL_GENRES = "SELECT * FROM genres ORDER BY genre_id";
     private static final String FIND_GENRES_BY_ID = "SELECT * FROM genres WHERE genre_id = ?";
     private static final String FIND_ALL_GENRES_BY_ID = "SELECT * FROM genres " +
             "WHERE genre_id IN ";
